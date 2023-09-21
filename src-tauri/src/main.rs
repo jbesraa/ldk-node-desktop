@@ -2,10 +2,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use ldk_node::bitcoin::secp256k1::PublicKey;
-use ldk_node::bitcoin::Network;
+use ldk_node::bitcoin::{Network, OutPoint};
 use ldk_node::io::SqliteStore;
-// use ldk_node::lightning_invoice::Invoice;
-use ldk_node::{Builder, LogLevel, NetAddress, Node};
+use ldk_node::{Builder, ChannelDetails, LogLevel, NetAddress, Node};
 use std::str::FromStr;
 use std::sync::{Mutex, OnceLock};
 use std::thread;
@@ -18,6 +17,13 @@ fn main() {
             stop_node,
             spendable_on_chain,
             get_our_address,
+            connect_to_node,
+            list_peers,
+            new_onchain_address,
+            list_channels,
+            open_channel,
+            total_onchain_balance,
+            sync_wallet
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -26,7 +32,9 @@ fn main() {
 #[tauri::command]
 fn get_node_id() -> PublicKey {
     let node = init_instance().expect("Failed to initialize node");
-    node.node_id()
+    let node_id = node.node_id();
+    dbg!(&node_id);
+    node_id
 }
 
 #[tauri::command]
@@ -56,9 +64,167 @@ fn stop_node() -> bool {
 }
 
 #[tauri::command]
+fn new_onchain_address() -> String {
+    let node = init_instance().expect("Failed to initialize node");
+    match node.new_onchain_address() {
+        Ok(a) => a.to_string(),
+        Err(e) => {
+            dbg!(e);
+            "".to_string()
+        }
+    }
+}
+
+#[tauri::command]
+fn open_channel() -> bool {
+    let node = init_instance().expect("Failed to initialize node");
+    let target_node_id = match PublicKey::from_str(
+        "034b8fe565dc5d7321bdd2021d3eb2ebb601c5ecc0f7d591c4f48ea7c8a2f18f78",
+    ) {
+        Ok(key) => key,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let target_address = match NetAddress::from_str("0.0.0.0:9734") {
+        Ok(address) => address,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let channel_amount_sats = 100;
+    let push_to_counterparty_msat: Option<u64> = None;
+    let channel_config = None;
+    let announce_channel: bool = false;
+    match node.connect_open_channel(
+        target_node_id,
+        target_address,
+        channel_amount_sats,
+        push_to_counterparty_msat,
+        channel_config,
+        announce_channel,
+    ) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ChanDetails {
+    // pub channel_id: ChannelId,
+    pub counterparty_node_id: PublicKey,
+    pub funding_txo: Option<OutPoint>,
+    pub channel_value_sats: u64,
+    pub unspendable_punishment_reserve: Option<u64>,
+    // pub user_channel_id: UserChannelId,
+    pub feerate_sat_per_1000_weight: u32,
+    pub balance_msat: u64,
+    pub outbound_capacity_msat: u64,
+    pub inbound_capacity_msat: u64,
+    pub confirmations_required: Option<u32>,
+    pub confirmations: Option<u32>,
+    pub is_outbound: bool,
+    pub is_channel_ready: bool,
+    pub is_usable: bool,
+    pub is_public: bool,
+    pub cltv_expiry_delta: Option<u16>,
+}
+
+impl From<ChannelDetails> for ChanDetails {
+    fn from(channel_details: ChannelDetails) -> Self {
+        ChanDetails {
+            counterparty_node_id: channel_details.counterparty_node_id,
+            funding_txo: channel_details.funding_txo,
+            channel_value_sats: channel_details.channel_value_sats,
+            unspendable_punishment_reserve: channel_details.unspendable_punishment_reserve,
+            feerate_sat_per_1000_weight: channel_details.feerate_sat_per_1000_weight,
+            balance_msat: channel_details.balance_msat,
+            outbound_capacity_msat: channel_details.outbound_capacity_msat,
+            inbound_capacity_msat: channel_details.inbound_capacity_msat,
+            confirmations_required: channel_details.confirmations_required,
+            confirmations: channel_details.confirmations,
+            is_outbound: channel_details.is_outbound,
+            is_channel_ready: channel_details.is_channel_ready,
+            is_usable: channel_details.is_usable,
+            is_public: channel_details.is_public,
+            cltv_expiry_delta: channel_details.cltv_expiry_delta,
+        }
+    }
+}
+
+#[tauri::command]
+fn list_channels() -> Vec<ChanDetails> {
+    let node = init_instance().expect("Failed to initialize node");
+    node.list_channels()
+        .into_iter()
+        .map(|c: ChannelDetails| ChanDetails::from(c))
+        .collect()
+}
+
+#[tauri::command]
+fn sync_wallet() -> bool {
+    let node = init_instance().expect("Failed to initialize node");
+    match node.sync_wallets() {
+        Ok(_) => true,
+        Err(e) => {
+            dbg!(&e);
+            false
+        }
+    }
+}
+
+#[tauri::command]
+fn connect_to_node() -> bool {
+    let node = init_instance().expect("Failed to initialize node");
+    let pub_key = match PublicKey::from_str(
+        "034b8fe565dc5d7321bdd2021d3eb2ebb601c5ecc0f7d591c4f48ea7c8a2f18f78",
+    ) {
+        Ok(key) => key,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    // ip "wise-moles-lie.loca.lt:9735"
+    let listening_address = match NetAddress::from_str("0.0.0.0:9734") {
+        Ok(address) => address,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    match node.connect(pub_key, listening_address, true) {
+        Ok(_) => return true,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+}
+
+#[tauri::command]
+fn list_peers() -> Vec<String> {
+    let node = init_instance().expect("Failed to initialize node");
+    node.list_peers()
+        .into_iter()
+        .map(|peer| peer.node_id.to_string())
+        .collect()
+}
+
+#[tauri::command]
 fn spendable_on_chain() -> u64 {
     let node = init_instance().expect("Failed to initialize node");
     return node.spendable_onchain_balance_sats().unwrap();
+}
+
+#[tauri::command]
+fn total_onchain_balance() -> u64 {
+    let node = init_instance().expect("Failed to initialize node");
+    let total_balance = node.total_onchain_balance_sats().unwrap();
+    dbg!(&total_balance);
+    return total_balance;
 }
 
 #[tauri::command]
@@ -80,9 +246,9 @@ pub fn init_instance() -> Option<&'static Node<SqliteStore>> {
             if !*initialized {
                 let mut builder = Builder::new();
                 builder.set_network(Network::Testnet);
-                builder.set_log_level(LogLevel::Gossip);
+                builder.set_log_level(LogLevel::Error);
                 builder.set_listening_address(NetAddress::from_str("0.0.0.0:9735").unwrap());
-                builder.set_esplora_server("http://127.0.0.1:3001".to_string());
+                builder.set_esplora_server("https://blockstream.info/testnet/api".to_string());
                 builder.set_gossip_source_rgs(
                     "https://rapidsync.lightningdevkit.org/testnet/snapshot".to_string(),
                 );
@@ -97,67 +263,3 @@ pub fn init_instance() -> Option<&'static Node<SqliteStore>> {
     }
 }
 
-// node.start().expect("Failed to start node");
-// let node_id = node.node_id();
-// dbg!(&node_id);
-// let total_onchain_balance_sats = node.total_onchain_balance_sats().unwrap();
-// dbg!(&total_onchain_balance_sats);
-
-// tb1qmghmcgmnyul8p29jcemv0m4ffv3sqprlm9q4fm
-
-// let client_option = OUR_NODE.get();
-// if let Some(_) = client_option {
-//     return Some(OUR_NODE.get());
-// }
-//   let initializing_mutex = MONGO_INITIALIZED.get_or_init( std::sync::Mutex::new(false));
-//   let mut initialized = initializing_mutex.lock().unwrap();
-//   if !*initialized {
-//      let uri = std::env::var("MONGODB_URI")
-//         .unwrap_or_else(_ "mongodb+srv://test:test@cluster0.kwsrpgy.mongodb.net/".into());
-//      let mut client_options = ClientOptions::parse(uri).await?;
-//      client_options.app_name = Some("mymongo".to_string());
-//      if let Ok(client) = Client::with_options(client_options) {
-//         if let Ok(_) = MONGO.set(client) {
-//            *initialized = true;
-//           dbg!("Debug: Mongodb started @ 27017");
-//         }
-//      }
-// };
-// drop(initialized);
-//   Ok(MONGO.get())
-// let mut builder = Builder::new();
-// builder.set_network(Network::Testnet);
-// builder.set_log_level(LogLevel::Gossip);
-// builder.set_esplora_server("http://127.0.0.1:3001".to_string());
-// builder.set_gossip_source_rgs(
-//     "https://rapidsync.lightningdevkit.org/testnet/snapshot".to_string(),
-// );
-
-// let node = builder.build().unwrap();
-// // let onchain_address = node.new_onchain_address().unwrap();
-// // dbg!(&onchain_address);
-// // let s = match node.sync_wallets() {
-// //     Ok(s) => s,
-// //     Err(e) => {
-// //         dbg!(e);
-// //         return;
-// //     }
-// // };
-
-// // .. fund address ..
-
-// let node_id = node.node_id();
-// dbg!(&node_id);
-// let spendable = node.spendable_onchain_balance_sats().unwrap();
-// dbg!(&spendable);
-// // node.connect_open_channel(node_id, node_addr, 10000, None, None, false)
-// //     .unwrap();
-
-// let event = node.wait_next_event();
-// println!("EVENT: {:?}", event);
-// node.event_handled();
-
-// // let invoice = Invoice::from_str("INVOICE_STR").unwrap();
-// // node.send_payment(&invoice).unwrap();
-
-// node.stop().unwrap();
