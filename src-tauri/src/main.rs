@@ -23,6 +23,7 @@ fn main() {
             list_channels,
             open_channel,
             total_onchain_balance,
+            is_node_running,
             sync_wallet
         ])
         .run(tauri::generate_context!())
@@ -43,7 +44,7 @@ fn start_node() -> bool {
     match node.start() {
         Ok(_) => {
             dbg!("Node started");
-            thread::spawn(|| {
+            thread::spawn(|| loop {
                 let event = node.wait_next_event();
                 println!("EVENT: {:?}", event);
                 node.event_handled();
@@ -64,6 +65,14 @@ fn stop_node() -> bool {
 }
 
 #[tauri::command]
+fn is_node_running() -> bool {
+    let node = init_instance().expect("Failed to initialize node");
+    let res = node.is_node_running();
+    dbg!(&res);
+    res
+}
+
+#[tauri::command]
 fn new_onchain_address() -> String {
     let node = init_instance().expect("Failed to initialize node");
     match node.new_onchain_address() {
@@ -79,7 +88,7 @@ fn new_onchain_address() -> String {
 fn open_channel() -> bool {
     let node = init_instance().expect("Failed to initialize node");
     let target_node_id = match PublicKey::from_str(
-        "034b8fe565dc5d7321bdd2021d3eb2ebb601c5ecc0f7d591c4f48ea7c8a2f18f78",
+        "03353b7ac6dc4f1efec4591fe33344040d189680d6096b3f2b0e050e841b169a3f",
     ) {
         Ok(key) => key,
         Err(e) => {
@@ -87,15 +96,15 @@ fn open_channel() -> bool {
             return false;
         }
     };
-    let target_address = match NetAddress::from_str("0.0.0.0:9734") {
+    let target_address = match NetAddress::from_str("0.0.0.0:9733") {
         Ok(address) => address,
         Err(e) => {
             dbg!(&e);
             return false;
         }
     };
-    let channel_amount_sats = 100;
-    let push_to_counterparty_msat: Option<u64> = None;
+    let channel_amount_sats = 4500;
+    let push_to_counterparty_msat: Option<u64> = Some(100);
     let channel_config = None;
     let announce_channel: bool = false;
     match node.connect_open_channel(
@@ -107,7 +116,10 @@ fn open_channel() -> bool {
         announce_channel,
     ) {
         Ok(_) => true,
-        Err(_) => false,
+        Err(e) => {
+            dbg!(&e);
+            false
+        }
     }
 }
 
@@ -179,7 +191,7 @@ fn sync_wallet() -> bool {
 fn connect_to_node() -> bool {
     let node = init_instance().expect("Failed to initialize node");
     let pub_key = match PublicKey::from_str(
-        "034b8fe565dc5d7321bdd2021d3eb2ebb601c5ecc0f7d591c4f48ea7c8a2f18f78",
+        "03353b7ac6dc4f1efec4591fe33344040d189680d6096b3f2b0e050e841b169a3f",
     ) {
         Ok(key) => key,
         Err(e) => {
@@ -188,7 +200,7 @@ fn connect_to_node() -> bool {
         }
     };
     // ip "wise-moles-lie.loca.lt:9735"
-    let listening_address = match NetAddress::from_str("0.0.0.0:9734") {
+    let listening_address = match NetAddress::from_str("0.0.0.0:9733") {
         Ok(address) => address,
         Err(e) => {
             dbg!(&e);
@@ -247,8 +259,12 @@ pub fn init_instance() -> Option<&'static Node<SqliteStore>> {
                 let mut builder = Builder::new();
                 builder.set_network(Network::Testnet);
                 builder.set_log_level(LogLevel::Error);
+                builder.set_log_level(LogLevel::Gossip);
+                builder.set_log_level(LogLevel::Debug);
+                builder.set_log_level(LogLevel::Info);
+                builder.set_log_level(LogLevel::Warn);
                 builder.set_listening_address(NetAddress::from_str("0.0.0.0:9735").unwrap());
-                builder.set_esplora_server("https://blockstream.info/testnet/api".to_string());
+                builder.set_esplora_server("http://127.0.0.1:3001".to_string());
                 builder.set_gossip_source_rgs(
                     "https://rapidsync.lightningdevkit.org/testnet/snapshot".to_string(),
                 );
@@ -262,4 +278,3 @@ pub fn init_instance() -> Option<&'static Node<SqliteStore>> {
         }
     }
 }
-
