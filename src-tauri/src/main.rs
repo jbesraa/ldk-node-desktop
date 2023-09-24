@@ -103,13 +103,13 @@ fn is_node_running(state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>
             return false;
         }
     };
-    let is_running = match node.as_mut() {
+    let node = match node.as_mut() {
         Some(n) => n.is_node_running(),
         None => {
             return false;
         }
     };
-    is_running
+    node
 }
 
 #[tauri::command]
@@ -494,10 +494,9 @@ pub fn init_instance() -> Option<&'static Node<SqliteStore>> {
             if !*initialized {
                 let mut builder = Builder::new();
                 builder.set_network(Network::Testnet);
-                builder.set_storage_dir_path("/home/ecode/ldk-keys".to_string());
                 builder.set_log_level(LogLevel::Error);
                 builder.set_listening_address(NetAddress::from_str("0.0.0.0:9735").unwrap());
-                builder.set_esplora_server("http://127.0.0.1:3001".to_string());
+                builder.set_esplora_server("https://ef88-2a06-c701-779a-3000-3362-2440-c391-1af7.ngrok-free.app".to_string());
                 builder.set_gossip_source_rgs(
                     "https://rapidsync.lightningdevkit.org/testnet/snapshot".to_string(),
                 );

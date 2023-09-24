@@ -207,13 +207,16 @@ interface TablePeerDetails {
 }
 
 export default function PeersTable() {
-	const { list_peers } = useNodeContext();
+	const { list_peers, is_node_running } = useNodeContext();
 	const [rows, setRows] = React.useState<TablePeerDetails[]>([]);
 
 	React.useEffect(() => {
 		const init = async () => {
+			let isNodeRunning = await is_node_running();
+			console.log(isNodeRunning);
+			if (!isNodeRunning) return;
 			let peers = await list_peers();
-			const rows: TablePeerDetails[] = peers.map(
+			const new_rows: TablePeerDetails[] = peers.map(
 				(row: PeerDetails) => {
 					return {
 						node_id: row.node_id,
@@ -224,8 +227,8 @@ export default function PeersTable() {
 					};
 				}
 			);
-			console.log(rows);
-			setRows(rows);
+			console.log(new_rows);
+			setRows(new_rows);
 		};
 
 		const timer = setInterval(async () => {
@@ -233,7 +236,7 @@ export default function PeersTable() {
 		}, 5000);
 
 		return () => { clearInterval(timer); };
-	}, []);
+	}, [list_peers]);
 
 	const [order, setOrder] = React.useState<Order>("asc");
 	const [orderBy, setOrderBy] = React.useState<keyof Data>("node_id");
@@ -311,8 +314,9 @@ export default function PeersTable() {
 				page * rowsPerPage,
 				page * rowsPerPage + rowsPerPage
 			),
-		[order, orderBy, page, rowsPerPage]
+		[order, orderBy, page, rowsPerPage, rows]
 	);
+	console.log(visibleRows);
 
 	return (
 		<Box sx={{ width: "100%", paddingTop: 2 }}>

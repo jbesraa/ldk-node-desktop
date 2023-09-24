@@ -24,3 +24,11 @@ export interface ChannelDetails {
      is_public: boolean,
      cltv_expiry_delta: number | null,
 }
+
+export interface TablePeerDetails {
+	node_id: string;
+	is_connected: string;
+	is_persisted: string;
+	address: string;
+	shared_channels: number;
+}
