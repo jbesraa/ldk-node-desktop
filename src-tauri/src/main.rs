@@ -5,14 +5,14 @@ use ldk_node::bitcoin::secp256k1::PublicKey;
 use ldk_node::bitcoin::{Network, OutPoint};
 use ldk_node::io::SqliteStore;
 use ldk_node::lightning_invoice::{Bolt11Invoice, SignedRawBolt11Invoice};
-use ldk_node::{Builder, ChannelDetails, ChannelId, LogLevel, NetAddress, Node, PeerDetails};
+use ldk_node::{Builder, ChannelDetails, LogLevel, NetAddress, Node, PeerDetails};
 use std::str::FromStr;
-use std::sync::{Mutex, MutexGuard, OnceLock};
+use std::sync::{Mutex, OnceLock};
 use std::thread;
 
 fn main() {
     tauri::Builder::default()
-        .manage(Mutex::new(Some(init_instance(true).unwrap())))
+        .manage(Mutex::new(Some(init_instance().unwrap())))
         .invoke_handler(tauri::generate_handler![
             get_node_id,
             start_node,
@@ -54,17 +54,27 @@ fn get_node_id(state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>) -
 
 #[tauri::command]
 fn start_node(state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>) -> bool {
-    let node = init_instance(true).expect("Failed to initialize node");
-    let mut state = state.lock().unwrap();
+    let mut node = match state.lock() {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let node = match node.as_mut() {
+        Some(n) => n,
+        None => {
+            return false;
+        }
+    };
     match node.start() {
         Ok(_) => {
             dbg!("Node started");
-            *state = Some(&node);
-            // thread::spawn(|| loop {
-            //     let event = node.wait_next_event();
-            //     println!("EVENT: {:?}", event);
-            //     node.event_handled();
-            // });
+            thread::spawn(|| loop {
+                let event = node.wait_next_event();
+                println!("EVENT: {:?}", event);
+                node.event_handled();
+            });
             return true;
         }
         Err(_) => return false,
@@ -93,18 +103,31 @@ fn is_node_running(state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>
             return false;
         }
     };
-    let node = match node.as_mut() {
+    let is_running = match node.as_mut() {
         Some(n) => n.is_node_running(),
         None => {
             return false;
         }
     };
-    node
+    is_running
 }
 
 #[tauri::command]
-fn new_onchain_address() -> String {
-    let node = init_instance(false).expect("Failed to initialize node");
+fn new_onchain_address(state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>) -> String {
+    let empty_result = "".to_string();
+    let mut node = match state.lock() {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return empty_result;
+        }
+    };
+    let node = match node.as_mut() {
+        Some(n) => n,
+        None => {
+            return empty_result;
+        }
+    };
     match node.new_onchain_address() {
         Ok(a) => a.to_string(),
         Err(e) => {
@@ -115,28 +138,51 @@ fn new_onchain_address() -> String {
 }
 
 #[tauri::command]
-fn open_channel() -> bool {
-    let node = init_instance(false).expect("Failed to initialize node");
-    let target_node_id = match PublicKey::from_str(
-        "03353b7ac6dc4f1efec4591fe33344040d189680d6096b3f2b0e050e841b169a3f",
-    ) {
+fn open_channel(
+    state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>,
+    node_id: String,
+    net_address: String,
+    channel_amount_sats: u64,
+    push_to_counterparty_msat: u64,
+    announce_channel: bool,
+) -> bool {
+    let empty_result = false;
+    let mut node = match state.lock() {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return empty_result;
+        }
+    };
+    let node = match node.as_mut() {
+        Some(n) => n,
+        None => {
+            return empty_result;
+        }
+    };
+    let target_node_id = match PublicKey::from_str(&node_id) {
         Ok(key) => key,
         Err(e) => {
             dbg!(&e);
             return false;
         }
     };
-    let target_address = match NetAddress::from_str("0.0.0.0:9733") {
+
+    let target_address = match NetAddress::from_str(&net_address) {
         Ok(address) => address,
         Err(e) => {
             dbg!(&e);
             return false;
         }
     };
-    let channel_amount_sats = 4500;
-    let push_to_counterparty_msat: Option<u64> = Some(100);
+
+    let push_to_counterparty_msat: Option<u64> = if push_to_counterparty_msat > 1 {
+        Some(push_to_counterparty_msat)
+    } else {
+        None
+    };
+
     let channel_config = None;
-    let announce_channel: bool = false;
     match node.connect_open_channel(
         target_node_id,
         target_address,
@@ -222,20 +268,23 @@ fn list_channels(
 }
 
 #[tauri::command]
-fn sync_wallet() -> bool {
-    let node = init_instance(false).expect("Failed to initialize node");
-    match node.sync_wallets() {
-        Ok(_) => true,
+fn sync_wallet(state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>) -> bool {
+    let mut node = match state.try_lock() {
+        Ok(s) => s,
         Err(e) => {
             dbg!(&e);
-            false
+            return false;
         }
+    };
+    match node.as_mut() {
+        Some(n) => return n.sync_wallets().is_ok(),
+        None => return false,
     }
 }
 
 #[tauri::command]
 fn create_invoice(amount_msat: u64, description: &str, expiry_secs: u32) -> Option<String> {
-    let node = init_instance(false).expect("Failed to initialize node");
+    let node = init_instance().expect("Failed to initialize node");
     match node.receive_payment(amount_msat, description, expiry_secs) {
         Ok(i) => Some(i.into_signed_raw().to_string()),
         Err(e) => {
@@ -247,23 +296,23 @@ fn create_invoice(amount_msat: u64, description: &str, expiry_secs: u32) -> Opti
 
 /// returns payment hash if successful
 #[tauri::command]
-fn pay_invoice(i: String) -> Option<[u8; 32]> {
-    let node = init_instance(false).expect("Failed to initialize node");
-    let i = match SignedRawBolt11Invoice::from_str(&i) {
+fn pay_invoice(invoice: String) -> Option<[u8; 32]> {
+    let node = init_instance().expect("Failed to initialize node");
+    let invoice = match SignedRawBolt11Invoice::from_str(&invoice) {
         Ok(i) => i,
         Err(e) => {
             dbg!(&e);
             return None;
         }
     };
-    let i = match Bolt11Invoice::from_signed(i) {
+    let invoice = match Bolt11Invoice::from_signed(invoice) {
         Ok(i) => i,
         Err(e) => {
             dbg!(&e);
             return None;
         }
     };
-    match node.send_payment(&i) {
+    match node.send_payment(&invoice) {
         Ok(p) => Some(p.0),
         Err(e) => {
             dbg!(&e);
@@ -273,25 +322,40 @@ fn pay_invoice(i: String) -> Option<[u8; 32]> {
 }
 
 #[tauri::command]
-fn connect_to_node() -> bool {
-    let node = init_instance(false).expect("Failed to initialize node");
-    let pub_key = match PublicKey::from_str(
-        "03353b7ac6dc4f1efec4591fe33344040d189680d6096b3f2b0e050e841b169a3f",
-    ) {
+fn connect_to_node(
+    state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>,
+    node_id: String,
+    net_address: String,
+) -> bool {
+    let mut node = match state.try_lock() {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let pub_key = match PublicKey::from_str(&node_id) {
         Ok(key) => key,
         Err(e) => {
             dbg!(&e);
             return false;
         }
     };
-    let listening_address = match NetAddress::from_str("0.0.0.0:9733") {
+    let listening_address = match NetAddress::from_str(&net_address) {
         Ok(address) => address,
         Err(e) => {
             dbg!(&e);
             return false;
         }
     };
-    match node.connect(pub_key, listening_address, true) {
+    let persist = true;
+    let node = match node.as_mut() {
+        Some(n) => n,
+        None => {
+            return false;
+        }
+    };
+    match node.connect(pub_key, listening_address, persist) {
         Ok(_) => return true,
         Err(e) => {
             dbg!(&e);
@@ -330,6 +394,7 @@ fn list_peers(
     let mut node = match state.try_lock() {
         Ok(s) => s,
         Err(e) => {
+            dbg!(&e);
             return vec![];
         }
     };
@@ -343,83 +408,106 @@ fn list_peers(
             return vec![];
         }
     };
+    dbg!(&node);
     node
 }
 
 #[tauri::command]
-fn spendable_on_chain() -> u64 {
-    let node = init_instance(false).expect("Failed to initialize node");
-    return node.spendable_onchain_balance_sats().unwrap();
+fn spendable_on_chain(state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>) -> u64 {
+    let mut node = match state.try_lock() {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return 0;
+        }
+    };
+    match node.as_mut() {
+        Some(n) => match n.spendable_onchain_balance_sats() {
+            Ok(b) => return b,
+            Err(e) => {
+                dbg!(&e);
+                return 0;
+            }
+        },
+        None => {
+            return 0;
+        }
+    }
 }
 
 #[tauri::command]
-fn total_onchain_balance() -> u64 {
-    let node = init_instance(false).expect("Failed to initialize node");
-    let total_balance = node.total_onchain_balance_sats().unwrap();
-    dbg!(&total_balance);
-    return total_balance;
+fn total_onchain_balance(state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>) -> u64 {
+    let mut node = match state.try_lock() {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return 0;
+        }
+    };
+    match node.as_mut() {
+        Some(n) => match n.total_onchain_balance_sats() {
+            Ok(b) => return b,
+            Err(e) => {
+                dbg!(&e);
+                return 0;
+            }
+        },
+        None => {
+            return 0;
+        }
+    }
 }
 
 #[tauri::command]
-fn get_our_address() -> String {
-    let node = init_instance(false).expect("Failed to initialize node");
-    return node.listening_address().unwrap().to_string();
+fn get_our_address(state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>) -> String {
+    let empty_result = "".to_string();
+    let mut node = match state.try_lock() {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return empty_result;
+        }
+    };
+    match node.as_mut() {
+        Some(n) => match n.listening_address() {
+            Some(b) => return b.to_string(),
+            None => {
+                return empty_result;
+            }
+        },
+        None => {
+            return empty_result;
+        }
+    }
 }
 
 static OUR_NODE: OnceLock<Node<SqliteStore>> = OnceLock::new();
 static IS_OUR_NODE_INIT: OnceLock<std::sync::Mutex<bool>> = OnceLock::new();
 
-pub fn init_instance(reload: bool) -> Option<&'static Node<SqliteStore>> {
-    if reload {
-        let initializing_mutex: &Mutex<bool> =
-            IS_OUR_NODE_INIT.get_or_init(|| std::sync::Mutex::new(false));
-        let mut initialized = initializing_mutex.lock().unwrap();
-        let mut builder = Builder::new();
-        builder.set_network(Network::Testnet);
-        builder.set_log_level(LogLevel::Error);
-        builder.set_log_level(LogLevel::Gossip);
-        builder.set_log_level(LogLevel::Debug);
-        builder.set_log_level(LogLevel::Info);
-        builder.set_log_level(LogLevel::Warn);
-        builder.set_listening_address(NetAddress::from_str("0.0.0.0:9735").unwrap());
-        builder.set_esplora_server("http://127.0.0.1:3001".to_string());
-        builder.set_gossip_source_rgs(
-            "https://rapidsync.lightningdevkit.org/testnet/snapshot".to_string(),
-        );
-        let node: Node<SqliteStore> = builder.build().unwrap();
-        if let Ok(_) = OUR_NODE.set(node) {
-            *initialized = true;
-        };
-        drop(initialized);
-        OUR_NODE.get()
-    } else {
-        match OUR_NODE.get() {
-            Some(_) => return OUR_NODE.get(),
-            None => {
-                let initializing_mutex: &Mutex<bool> =
-                    IS_OUR_NODE_INIT.get_or_init(|| std::sync::Mutex::new(false));
-                let mut initialized = initializing_mutex.lock().unwrap();
-                if !*initialized {
-                    let mut builder = Builder::new();
-                    builder.set_network(Network::Testnet);
-                    builder.set_log_level(LogLevel::Error);
-                    builder.set_log_level(LogLevel::Gossip);
-                    builder.set_log_level(LogLevel::Debug);
-                    builder.set_log_level(LogLevel::Info);
-                    builder.set_log_level(LogLevel::Warn);
-                    builder.set_listening_address(NetAddress::from_str("0.0.0.0:9735").unwrap());
-                    builder.set_esplora_server("http://127.0.0.1:3001".to_string());
-                    builder.set_gossip_source_rgs(
-                        "https://rapidsync.lightningdevkit.org/testnet/snapshot".to_string(),
-                    );
-                    let node: Node<SqliteStore> = builder.build().unwrap();
-                    if let Ok(_) = OUR_NODE.set(node) {
-                        *initialized = true;
-                    };
+pub fn init_instance() -> Option<&'static Node<SqliteStore>> {
+    match OUR_NODE.get() {
+        Some(_) => return OUR_NODE.get(),
+        None => {
+            let initializing_mutex: &Mutex<bool> =
+                IS_OUR_NODE_INIT.get_or_init(|| std::sync::Mutex::new(false));
+            let mut initialized = initializing_mutex.lock().unwrap();
+            if !*initialized {
+                let mut builder = Builder::new();
+                builder.set_network(Network::Testnet);
+                builder.set_storage_dir_path("/home/ecode/ldk-keys".to_string());
+                builder.set_log_level(LogLevel::Error);
+                builder.set_listening_address(NetAddress::from_str("0.0.0.0:9735").unwrap());
+                builder.set_esplora_server("http://127.0.0.1:3001".to_string());
+                builder.set_gossip_source_rgs(
+                    "https://rapidsync.lightningdevkit.org/testnet/snapshot".to_string(),
+                );
+                let node: Node<SqliteStore> = builder.build().unwrap();
+                if let Ok(_) = OUR_NODE.set(node) {
+                    *initialized = true;
                 };
-                drop(initialized);
-                OUR_NODE.get()
-            }
+            };
+            drop(initialized);
+            OUR_NODE.get()
         }
     }
 }

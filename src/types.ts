@@ -1,8 +1,9 @@
 export interface PeerDetails {
   node_id: string;
   address: string;
-  is_persisted: boolean;
-  is_connected: boolean;
+  is_persisted: string;
+  is_connected: string;
+  shared_channels: number;
 }
 
 export interface ChannelDetails {

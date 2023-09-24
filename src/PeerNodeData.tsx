@@ -10,7 +10,7 @@ export default function PeerNodeData(i: PeerDetails) {
 	const sharedChannelsCount = 0
 
   return (
-    <Card sx={{ minWidth: 75 }}>
+    <Card sx={{ minWidth: 275 }}>
       <CardContent>
         <Typography sx={{ fontSize: 14 }} color="text.secondary" gutterBottom>
           Node Info
