@@ -3,7 +3,7 @@ import Button from "@mui/material/Button";
 
 const buttonStyle = {
 	color: "#344e41",
-	fontSize: "1em",
+	fontSize: "0.8em",
 	width: "100%",
 	fontWeight: "600",
 	backgroundColor: "#a3b18a",

@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import styled from "styled-components";
 import OurNodeInfo from "./NodeData";
 import PeersTable from "./PeersTable";
@@ -13,14 +12,13 @@ import MenuAppBar from "./AppBar";
 import { NodeContextProvider } from "./NodeContext";
 
 function App() {
-
 	return (
 		<NodeContextProvider>
 		<Wrapper>
 			<MenuAppBar />
 			<div
 				style={{
-					gridGap: "0.5em",
+					gridGap: "0.8em",
 					paddingTop: "2em",
 					display: "grid",
 					gridTemplateColumns: "1.2fr 1fr",
@@ -30,10 +28,9 @@ function App() {
 				<div
 					style={{
 						display: "grid",
-						gridTemplateColumns: "1fr 1fr 1fr 1fr",
-						gridGap: "0.8em",
+						gridTemplateColumns: "1fr",
+						gridGap: "0.2em",
 						backgroundColor: "inherit",
-						padding: "0em 1em 0em 1em",
 					}}
 				>
 					<DialogWindow
