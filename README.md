@@ -1,5 +1,7 @@
 ### LDK Node Management Desktop App
 
+STILL IN DEV!
+
 ```
 git clone git@github.com:jbesraa/ldk-node-desktop.git
 cd ldk-node-desktop
