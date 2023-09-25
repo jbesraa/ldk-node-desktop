@@ -15,17 +15,39 @@ import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import DeleteIcon from "@mui/icons-material/Delete";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
 import { ChannelDetails } from "../types";
 import { useNodeContext } from "../NodeContext";
-import LinkIcon from "@mui/icons-material/Link";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
+
+// channel_id: string,
+// counterparty_node_id: string,
+// // funding_txo: Option<OutPoint>,
+// channel_value_sats: number,
+// unspendable_punishment_reserve: number | null,
+// feerate_sat_per_1000_weight: number,
+// balance_msat: number,
+// outbound_capacity_msat: number,
+// inbound_capacity_msat: number,
+// confirmations_required: number | null,
+// confirmations: number | null,
+// is_outbound: boolean,
+// is_usable: boolean,
+// is_public: boolean,
+// cltv_expiry_delta: number | null,
 
 interface Data {
 	channel_id: string;
 	channel_value_msat: number;
+	confirmations: number;
+	is_channel_ready: string;
+	balance_msat: number;
+	is_usable: string;
+	is_outbound: string;
+	is_public: string;
+	counterparty_node_id: string;
+	inbound_capacity_msat: number;
+	outbound_capacity_msat: number;
 }
 
 type Order = "asc" | "desc";
@@ -49,6 +71,60 @@ const headCells: readonly HeadCell[] = [
 		numeric: true,
 		disablePadding: false,
 		label: "Channel Value (msat)",
+	},
+	{
+		id: "confirmations",
+		numeric: true,
+		disablePadding: false,
+		label: "Confirmations",
+	},
+	{
+		id: "is_channel_ready",
+		numeric: true,
+		disablePadding: false,
+		label: "Channel Ready",
+	},
+	{
+		id: "balance_msat",
+		numeric: true,
+		disablePadding: false,
+		label: "Balance (MSat)",
+	},
+	{
+		id: "is_usable",
+		numeric: true,
+		disablePadding: false,
+		label: "Is Usable",
+	},
+	{
+		id: "is_outbound",
+		numeric: true,
+		disablePadding: false,
+		label: "Is Outbound",
+	},
+	{
+		id: "is_public",
+		numeric: true,
+		disablePadding: false,
+		label: "Is Public",
+	},
+	{
+		id: "counterparty_node_id",
+		numeric: false,
+		disablePadding: false,
+		label: "Counterprty Node Id",
+	},
+	{
+		id: "inbound_capacity_msat",
+		numeric: true,
+		disablePadding: false,
+		label: "Inbount Capacity (MSat)",
+	},
+	{
+		id: "outbound_capacity_msat",
+		numeric: true,
+		disablePadding: false,
+		label: "Outbound Capacity (MSat)",
 	},
 ];
 
@@ -178,9 +254,9 @@ export default function ChannelsTable() {
 	React.useEffect(() => {
 		const init = async () => {
 			let isNodeRunning = await is_node_running();
-			console.log(isNodeRunning);
 			if (!isNodeRunning) return;
 			let channels = await list_channels();
+			console.log(channels);
 			setRows(channels);
 		};
 
@@ -272,7 +348,6 @@ export default function ChannelsTable() {
 			),
 		[order, orderBy, page, rowsPerPage, rows]
 	);
-	console.log(visibleRows);
 
 	return (
 		<Box sx={{ width: "100%", paddingTop: 2 }}>
@@ -329,10 +404,37 @@ export default function ChannelsTable() {
 											scope="row"
 											padding="none"
 										>
-											{row.channel_id}
+											{row.channel_id.slice(0,10)}..
 										</TableCell>
 										<TableCell align="right">
 											{row.channel_value_sats}
+										</TableCell>
+										<TableCell align="right">
+											{row.confirmations}
+										</TableCell>
+										<TableCell align="right">
+											{row.is_channel_ready ? "Yes" : "No"}
+										</TableCell>
+										<TableCell align="right">
+											{row.balance_msat}
+										</TableCell>
+										<TableCell align="right">
+											{row.is_usable ? "Yes" : "No"}
+										</TableCell>
+										<TableCell align="right">
+											{row.is_outbound ? "Yes" : "No"}
+										</TableCell>
+										<TableCell align="right">
+											{row.is_public ? "Yes" : "No"}
+										</TableCell>
+										<TableCell align="right">
+											{row.counterparty_node_id.slice(0, 8)}
+										</TableCell>
+										<TableCell align="right">
+											{row.inbound_capacity_msat}
+										</TableCell>
+										<TableCell align="right">
+											{row.outbound_capacity_msat}
 										</TableCell>
 									</TableRow>
 								);

@@ -32,14 +32,21 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 	const [channel_amount_sats, setChannelAmountSats] =
 		React.useState(0);
 	const [push_to_counterparty_msat, setPushToCounterpartyMsat] =
-		React.useState(0);
+		React.useState(2000);
 	const [announce_channel, setAnnounceChannel] =
 		React.useState(false);
 	const [isSnackbarOpen, setIssnackbarOpen] = React.useState(false);
 
 	async function open_channel() {
 		try {
-			let res: boolean = await invoke("open_channel", {});
+			let res: boolean = await invoke("open_channel", {
+				nodeId: peer_node_id,
+				netAddress: peer_net_address,
+				channelAmountSats: channel_amount_sats,
+				pushToCounterpartyMsat: push_to_counterparty_msat,
+				announceChannel: announce_channel,
+			});
+			console.log("hhh", res);
 			if (res) {
 				setMessage("Successfully connected to peer");
 			}

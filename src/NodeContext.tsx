@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import { createContext, useContext } from "react";
-import { ChannelDetails, PeerDetails, PaymentData } from "./types";
+import { ChannelDetails, PeerDetails, PaymentData, ConnectToPeerInput } from "./types";
 
 export interface NodeActions {
 	sync_wallet: () => Promise<boolean>;
@@ -15,11 +15,7 @@ export interface NodeActions {
 	get_total_onchain_balance: () => Promise<number>;
 	list_channels: () => Promise<ChannelDetails[]>;
 	list_payments: () => Promise<PaymentData[]>;
-}
-
-export interface ConnectToPeerInput {
-	node_id: string;
-	net_address: string;
+	disconnect_peer: (i: string) => Promise<boolean>;
 }
 
 export const useNodeContext = () => useContext(NodeContext)
@@ -46,12 +42,26 @@ export const NodeContextProvider = ({children}:{ children: any }) => {
 		try {
 			const { node_id, net_address } = i;
 			let res: boolean = await invoke("connect_to_node", {
-				node_id,
-				net_address,
+				nodeId: node_id,
+				netAddress: net_address,
 			});
 			return res;
 		} catch (e) {
 			console.log("Error Connecting To Peer", e);
+			return false;
+		}
+	}
+
+	async function disconnect_peer(
+		i: string
+	): Promise<boolean> {
+		try {
+			let res: boolean = await invoke("disconnect_peer", {
+				nodeId: i,
+			});
+			return res;
+		} catch (e) {
+			console.log("Error Disconnecting Peer", e);
 			return false;
 		}
 	}
@@ -177,7 +187,8 @@ export const NodeContextProvider = ({children}:{ children: any }) => {
 		get_node_id,
 		get_total_onchain_balance,
 		list_channels,
-		list_payments
+		list_payments,
+		disconnect_peer
 	};
 
 	return (

@@ -16,7 +16,7 @@ import Checkbox from "@mui/material/Checkbox";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { visuallyHidden } from "@mui/utils";
-import { PeerDetails } from "../types";
+import { PeerDetails, CoonectToPeerInput } from "../types";
 import { useNodeContext } from "../NodeContext";
 import LinkIcon from "@mui/icons-material/Link";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
@@ -144,10 +144,12 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 
 interface EnhancedTableToolbarProps {
 	numSelected: number;
+	disconnectSelectedNodes: () => void;
+	connectToSelectedNodes: () => void;
 }
 
 function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
-	const { numSelected } = props;
+	const { numSelected, connectToSelectedNodes, disconnectSelectedNodes } = props;
 
 	return (
 		<Toolbar
@@ -183,18 +185,13 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 				</Typography>
 			)}
 			<Tooltip title="Connect">
-				<IconButton>
+				<IconButton onClick={connectToSelectedNodes}>
 					<LinkIcon />
 				</IconButton>
 			</Tooltip>
 			<Tooltip title="Disconnect">
-				<IconButton>
+				<IconButton onClick={disconnectSelectedNodes}>
 					<LinkOffIcon />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Open Channel">
-				<IconButton>
-					<ElectricBoltIcon />
 				</IconButton>
 			</Tooltip>
 		</Toolbar>
@@ -210,13 +207,12 @@ interface TablePeerDetails {
 }
 
 export default function PeersTable() {
-	const { list_peers, is_node_running } = useNodeContext();
+	const { list_peers, is_node_running, connect_to_peer, disconnect_peer } = useNodeContext();
 	const [rows, setRows] = React.useState<TablePeerDetails[]>([]);
 
 	React.useEffect(() => {
 		const init = async () => {
 			let isNodeRunning = await is_node_running();
-			console.log(isNodeRunning);
 			if (!isNodeRunning) return;
 			let peers = await list_peers();
 			const new_rows: TablePeerDetails[] = peers.map(
@@ -230,7 +226,6 @@ export default function PeersTable() {
 					};
 				}
 			);
-			console.log(new_rows);
 			setRows(new_rows);
 		};
 
@@ -321,12 +316,31 @@ export default function PeersTable() {
 			),
 		[order, orderBy, page, rowsPerPage, rows]
 	);
-	console.log(visibleRows);
+
+	const connectToSelectedNodes = async () => {
+		const nodes: CoonectToPeerInput[] = [];
+		const selected_nodes = selected
+		for (let i=0;i<selected_nodes.length;i++){
+			const nodeId = selected_nodes[i];
+			let net_address = rows.find((r) => r.node_id = nodeId)?.address;
+			if(!net_address) continue;
+			else nodes.push({node_id: nodeId, net_address: net_address})
+		};
+		await Promise.all(nodes.map((n: CoonectToPeerInput) => connect_to_peer(n)))
+	}
+
+	const disconnectSelectedNodes = async () => {
+		const nodes: string[] = selected;
+		await Promise.all(nodes.map((n: string) => disconnect_peer(n)))
+	}
 
 	return (
 		<Box sx={{ width: "100%", paddingTop: 2 }}>
 			<Paper sx={{ width: "100%", mb: 2 }}>
-				<EnhancedTableToolbar numSelected={selected.length} />
+				<EnhancedTableToolbar 
+					disconnectSelectedNodes={disconnectSelectedNodes}
+					connectToSelectedNodes={connectToSelectedNodes} 
+					numSelected={selected.length} />
 				<TableContainer>
 					<Table
 						sx={{ minWidth: 750 }}

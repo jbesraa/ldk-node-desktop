@@ -23,7 +23,6 @@ export default function MenuAppBar() {
 	useEffect(() => {
 		const timer = setInterval(async () => {
 			let res = await is_node_running();
-			console.log(res);
 			setIsNodeRunning(res);
 		}, 3000);
 		return () => clearInterval(timer);

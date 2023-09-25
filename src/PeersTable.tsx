@@ -16,11 +16,10 @@ import Checkbox from "@mui/material/Checkbox";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import DeleteIcon from "@mui/icons-material/Delete";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
 import { PeerDetails } from "./types";
 import { useNodeContext } from "./NodeContext";
-import LinkIcon from '@mui/icons-material/Link';
+import LinkIcon from "@mui/icons-material/Link";
 
 interface Data {
 	node_id: string;
@@ -96,7 +95,8 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 		onRequestSort,
 	} = props;
 	const createSortHandler =
-		(property: keyof Data) => (event: React.MouseEvent<unknown>) => {
+		(property: keyof Data) =>
+		(event: React.MouseEvent<unknown>) => {
 			onRequestSort(event, property);
 		};
 
@@ -106,8 +106,12 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 				<TableCell padding="checkbox">
 					<Checkbox
 						color="primary"
-						indeterminate={numSelected > 0 && numSelected < rowCount}
-						checked={rowCount > 0 && numSelected === rowCount}
+						indeterminate={
+							numSelected > 0 && numSelected < rowCount
+						}
+						checked={
+							rowCount > 0 && numSelected === rowCount
+						}
 						onChange={onSelectAllClick}
 						inputProps={{
 							"aria-label": "select all desserts",
@@ -118,17 +122,30 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 					<TableCell
 						key={headCell.id}
 						align={headCell.numeric ? "right" : "left"}
-						padding={headCell.disablePadding ? "none" : "normal"}
-						sortDirection={orderBy === headCell.id ? order : false}
+						padding={
+							headCell.disablePadding
+								? "none"
+								: "normal"
+						}
+						sortDirection={
+							orderBy === headCell.id ? order : false
+						}
 					>
 						<TableSortLabel
 							active={orderBy === headCell.id}
-							direction={orderBy === headCell.id ? order : "asc"}
+							direction={
+								orderBy === headCell.id
+									? order
+									: "asc"
+							}
 							onClick={createSortHandler(headCell.id)}
 						>
 							{headCell.label}
 							{orderBy === headCell.id ? (
-								<Box component="span" sx={visuallyHidden}>
+								<Box
+									component="span"
+									sx={visuallyHidden}
+								>
 									{order === "desc"
 										? "sorted descending"
 										: "sorted ascending"}
@@ -182,9 +199,9 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 					Peers
 				</Typography>
 			)}
-				<div>
+			<div>
 				<Tooltip title="Delete">
-					<IconButton>
+					<IconButton onClick={() => console.log("here")}>
 						<LinkIcon />
 					</IconButton>
 				</Tooltip>
@@ -193,7 +210,7 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 						<DeleteIcon />
 					</IconButton>
 				</Tooltip>
-				</div>
+			</div>
 		</Toolbar>
 	);
 }
@@ -224,7 +241,6 @@ export default function PeersTable() {
 					};
 				}
 			);
-			console.log(rows);
 			setRows(rows);
 		};
 
@@ -232,11 +248,14 @@ export default function PeersTable() {
 			init();
 		}, 5000);
 
-		return () => { clearInterval(timer); };
+		return () => {
+			clearInterval(timer);
+		};
 	}, []);
 
 	const [order, setOrder] = React.useState<Order>("asc");
-	const [orderBy, setOrderBy] = React.useState<keyof Data>("node_id");
+	const [orderBy, setOrderBy] =
+		React.useState<keyof Data>("node_id");
 	const [selected, setSelected] = React.useState<readonly string[]>(
 		[]
 	);
@@ -297,7 +316,8 @@ export default function PeersTable() {
 		setPage(0);
 	};
 
-	const isSelected = (name: string) => selected.indexOf(name) !== -1;
+	const isSelected = (name: string) =>
+		selected.indexOf(name) !== -1;
 
 	// Avoid a layout jump when reaching the last page with empty rows.
 	const emptyRows =
@@ -343,7 +363,10 @@ export default function PeersTable() {
 									<TableRow
 										hover
 										onClick={(event) =>
-											handleClick(event, String(row.node_id))
+											handleClick(
+												event,
+												String(row.node_id)
+											)
 										}
 										role="checkbox"
 										aria-checked={isItemSelected}
@@ -355,9 +378,12 @@ export default function PeersTable() {
 										<TableCell padding="checkbox">
 											<Checkbox
 												color="primary"
-												checked={isItemSelected}
+												checked={
+													isItemSelected
+												}
 												inputProps={{
-													"aria-labelledby": labelId,
+													"aria-labelledby":
+														labelId,
 												}}
 											/>
 										</TableCell>
@@ -375,7 +401,9 @@ export default function PeersTable() {
 										<TableCell align="right">
 											{row.is_persisted}
 										</TableCell>
-										<TableCell align="right">{row.address}</TableCell>
+										<TableCell align="right">
+											{row.address}
+										</TableCell>
 										<TableCell align="right">
 											{row.shared_channels}
 										</TableCell>

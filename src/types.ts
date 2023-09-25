@@ -42,3 +42,9 @@ export interface PaymentData {
 	status: String;
 }
 
+export interface ConnectToPeerInput {
+	node_id: string;
+	net_address: string;
+}
+
+

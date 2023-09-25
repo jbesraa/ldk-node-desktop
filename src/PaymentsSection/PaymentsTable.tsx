@@ -268,7 +268,6 @@ export default function PaymentsTable() {
 			),
 		[order, orderBy, page, rowsPerPage, rows]
 	);
-	console.log(visibleRows);
 
 	return (
 		<Box sx={{ width: "100%", paddingTop: 2 }}>
