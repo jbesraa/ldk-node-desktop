@@ -1,14 +1,13 @@
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import { useNodeContext } from "./NodeContext";
+import { useNodeContext } from "../NodeContext";
 import { useEffect, useState } from "react";
 
-export default function OurNodeInfo() {
+function OurNodeData() {
 	const {
 		get_node_id,
 		get_our_address,
-		is_node_running,
 		get_total_onchain_balance,
 		new_onchain_address,
 	} = useNodeContext();
@@ -16,16 +15,6 @@ export default function OurNodeInfo() {
 	const [listeningAddress, setListeningAddress] = useState("");
 	const [onChainAddress, setOnChainAddress] = useState("");
 	const [onChainBalance, setOnChainBalance] = useState(0);
-	const [isNodeRunning, setIsNodeRunning] = useState(false);
-
-	useEffect(() => {
-		const timer = setInterval(async () => {
-			let res = await is_node_running();
-			console.log(res);
-			setIsNodeRunning(res);
-		}, 3000);
-		return () => clearInterval(timer);
-	}, []);
 
 
 	useEffect(() => {
@@ -67,3 +56,5 @@ export default function OurNodeInfo() {
 		</Card>
 	);
 }
+
+export default OurNodeData;

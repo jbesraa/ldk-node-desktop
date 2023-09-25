@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState } from "react";
 import Button from "@mui/material/Button";
 
 const buttonStyle = {
@@ -9,19 +9,17 @@ const buttonStyle = {
 	backgroundColor: "#a3b18a",
 };
 
-export default function DialogWindow({
+function DialogWindow({
 	DialogView,
 	buttonTitle,
 }: {
 	DialogView: any;
 	buttonTitle: string;
 }) {
-	const [open, setOpen] = React.useState(false);
-
+	const [open, setOpen] = useState(false);
 	const handleClickOpen = () => {
 		setOpen(true);
 	};
-
 	const handleClose = () => {
 		setOpen(false);
 	};
@@ -35,10 +33,9 @@ export default function DialogWindow({
 			>
 				{buttonTitle}
 			</Button>
-			<DialogView
-				open={open}
-				onClose={handleClose}
-			/>
+			<DialogView open={open} onClose={handleClose} />
 		</>
 	);
 }
+
+export default DialogWindow;

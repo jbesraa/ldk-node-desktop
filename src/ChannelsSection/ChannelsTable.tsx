@@ -1,5 +1,4 @@
-import * as React from "react";
-import { alpha } from "@mui/material/styles";
+import * as React from "react";import { alpha } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -18,15 +17,12 @@ import Tooltip from "@mui/material/Tooltip";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
-import { PeerDetails } from "./types";
-import { useNodeContext } from "./NodeContext";
+import { ChannelDetails } from "../types";
+import { useNodeContext } from "../NodeContext";
 
 interface Data {
-	node_id: string;
-	is_connected: string;
-	is_persisted: string;
-	address: string;
-	shared_channels: number;
+	channel_id: string;
+	channel_value_msat: number;
 }
 
 type Order = "asc" | "desc";
@@ -40,34 +36,16 @@ interface HeadCell {
 
 const headCells: readonly HeadCell[] = [
 	{
-		id: "node_id",
+		id: "channel_id",
 		numeric: false,
 		disablePadding: true,
-		label: "Node Id",
+		label: "Channel ID",
 	},
 	{
-		id: "is_connected",
-		numeric: false,
-		disablePadding: false,
-		label: "Connected",
-	},
-	{
-		id: "is_persisted",
-		numeric: false,
-		disablePadding: false,
-		label: "Persisted",
-	},
-	{
-		id: "address",
-		numeric: false,
-		disablePadding: false,
-		label: "Address",
-	},
-	{
-		id: "shared_channels",
+		id: "channel_value_msat",
 		numeric: true,
 		disablePadding: false,
-		label: "Shared Channels",
+		label: "Channel Value (msat)",
 	},
 ];
 
@@ -95,7 +73,8 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 		onRequestSort,
 	} = props;
 	const createSortHandler =
-		(property: keyof Data) => (event: React.MouseEvent<unknown>) => {
+		(property: keyof Data) =>
+		(event: React.MouseEvent<unknown>) => {
 			onRequestSort(event, property);
 		};
 
@@ -105,8 +84,12 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 				<TableCell padding="checkbox">
 					<Checkbox
 						color="primary"
-						indeterminate={numSelected > 0 && numSelected < rowCount}
-						checked={rowCount > 0 && numSelected === rowCount}
+						indeterminate={
+							numSelected > 0 && numSelected < rowCount
+						}
+						checked={
+							rowCount > 0 && numSelected === rowCount
+						}
 						onChange={onSelectAllClick}
 						inputProps={{
 							"aria-label": "select all desserts",
@@ -117,17 +100,30 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 					<TableCell
 						key={headCell.id}
 						align={headCell.numeric ? "right" : "left"}
-						padding={headCell.disablePadding ? "none" : "normal"}
-						sortDirection={orderBy === headCell.id ? order : false}
+						padding={
+							headCell.disablePadding
+								? "none"
+								: "normal"
+						}
+						sortDirection={
+							orderBy === headCell.id ? order : false
+						}
 					>
 						<TableSortLabel
 							active={orderBy === headCell.id}
-							direction={orderBy === headCell.id ? order : "asc"}
+							direction={
+								orderBy === headCell.id
+									? order
+									: "asc"
+							}
 							onClick={createSortHandler(headCell.id)}
 						>
 							{headCell.label}
 							{orderBy === headCell.id ? (
-								<Box component="span" sx={visuallyHidden}>
+								<Box
+									component="span"
+									sx={visuallyHidden}
+								>
 									{order === "desc"
 										? "sorted descending"
 										: "sorted ascending"}
@@ -198,48 +194,32 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 	);
 }
 
-interface TablePeerDetails {
-	node_id: string;
-	is_connected: string;
-	is_persisted: string;
-	address: string;
-	shared_channels: number;
-}
 
-export default function PeersTable() {
-	const { list_peers, is_node_running } = useNodeContext();
-	const [rows, setRows] = React.useState<TablePeerDetails[]>([]);
+export default function ChannelsTable() {
+	const { list_channels, is_node_running } = useNodeContext();
+	const [rows, setRows] = React.useState<ChannelDetails[]>([]);
 
 	React.useEffect(() => {
 		const init = async () => {
 			let isNodeRunning = await is_node_running();
 			console.log(isNodeRunning);
 			if (!isNodeRunning) return;
-			let peers = await list_peers();
-			const new_rows: TablePeerDetails[] = peers.map(
-				(row: PeerDetails) => {
-					return {
-						node_id: row.node_id,
-						is_connected: row.is_connected ? "Yes" : "No",
-						is_persisted: row.is_persisted ? "Yes" : "No",
-						address: row.address,
-						shared_channels: 0,
-					};
-				}
-			);
-			console.log(new_rows);
-			setRows(new_rows);
+			let channels = await list_channels();
+			setRows(channels);
 		};
 
 		const timer = setInterval(async () => {
 			init();
 		}, 5000);
 
-		return () => { clearInterval(timer); };
-	}, [list_peers]);
+		return () => {
+			clearInterval(timer);
+		};
+	}, [list_channels]);
 
 	const [order, setOrder] = React.useState<Order>("asc");
-	const [orderBy, setOrderBy] = React.useState<keyof Data>("node_id");
+	const [orderBy, setOrderBy] =
+		React.useState<keyof Data>("channel_id");
 	const [selected, setSelected] = React.useState<readonly string[]>(
 		[]
 	);
@@ -259,7 +239,7 @@ export default function PeersTable() {
 		event: React.ChangeEvent<HTMLInputElement>
 	) => {
 		if (event.target.checked) {
-			const newSelected = rows.map((n) => n.node_id);
+			const newSelected = rows.map((n) => n.channel_id);
 			setSelected(newSelected);
 			return;
 		}
@@ -300,7 +280,8 @@ export default function PeersTable() {
 		setPage(0);
 	};
 
-	const isSelected = (name: string) => selected.indexOf(name) !== -1;
+	const isSelected = (name: string) =>
+		selected.indexOf(name) !== -1;
 
 	// Avoid a layout jump when reaching the last page with empty rows.
 	const emptyRows =
@@ -338,8 +319,8 @@ export default function PeersTable() {
 						/>
 						<TableBody>
 							{visibleRows.map((row, index) => {
-								const isItemSelected = isSelected(
-									String(row.node_id)
+									const isItemSelected = isSelected(
+											String(row.channel_id)
 								);
 								const labelId = `enhanced-table-checkbox-${index}`;
 
@@ -347,21 +328,27 @@ export default function PeersTable() {
 									<TableRow
 										hover
 										onClick={(event) =>
-											handleClick(event, String(row.node_id))
+											handleClick(
+												event,
+												String(row.channel_id)
+											)
 										}
 										role="checkbox"
 										aria-checked={isItemSelected}
 										tabIndex={-1}
-										key={String(row.node_id)}
+										key={String(row.channel_id)}
 										selected={isItemSelected}
 										sx={{ cursor: "pointer" }}
 									>
 										<TableCell padding="checkbox">
 											<Checkbox
 												color="primary"
-												checked={isItemSelected}
+												checked={
+													isItemSelected
+												}
 												inputProps={{
-													"aria-labelledby": labelId,
+													"aria-labelledby":
+														labelId,
 												}}
 											/>
 										</TableCell>
@@ -371,17 +358,10 @@ export default function PeersTable() {
 											scope="row"
 											padding="none"
 										>
-											{row.node_id}
+											{row.channel_id}
 										</TableCell>
 										<TableCell align="right">
-											{row.is_connected}
-										</TableCell>
-										<TableCell align="right">
-											{row.is_persisted}
-										</TableCell>
-										<TableCell align="right">{row.address}</TableCell>
-										<TableCell align="right">
-											{row.shared_channels}
+											{row.channel_value_sats}
 										</TableCell>
 									</TableRow>
 								);
@@ -411,3 +391,62 @@ export default function PeersTable() {
 		</Box>
 	);
 }
+
+// <Card sx={{ minWidth: 275 }}>
+// 	<CardContent>
+// 		<Typography
+// 			sx={{ fontSize: 14 }}
+// 			color="text.secondary"
+// 			gutterBottom
+// 		>
+// 			Node Info
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			Channel Value: {channel_value_sats} Satoshis
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			Couterparty Node Id: {counterparty_node_id.slice(0, 23)}..
+// 			{counterparty_node_id.slice(
+// 				counterparty_node_id.length - 5,
+// 				counterparty_node_id.length - 1
+// 			)}
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			Channel Id: {channel_id}
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			Balance: {balance_msat} msat
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			Inbound Capacity: {inbound_capacity_msat} msat
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			Outbound Capacity: {outbound_capacity_msat} msat
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			{is_channel_ready ? "Channel Ready" : "Channel Not Ready"}
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			{is_usable ? "Usable" : "Not Usable"}
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			{is_public ? "Public" : "Not Public"}
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			{is_outbound ? "Outbound" : "Inbound"}
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			{confirmations} / {confirmations_required} Confirmations
+// 		</Typography>
+// 		<Typography variant="h5" component="div">
+// 			CLTV Expiry Delta: {cltv_expiry_delta}
+// 		</Typography>
+// 	</CardContent>
+// 	<CardActions>
+// 		<Button disabled={true} size="small">
+// 			More Info
+// 		</Button>
+// 	</CardActions>
+// </Card>
+// );
+// }

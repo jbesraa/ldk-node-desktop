@@ -6,7 +6,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import SnackbarView from "../Snackbar";
+import { Snackbar } from "../../common";
 
 const buttonStyle = {
 	color: "#344e41",
@@ -22,35 +22,41 @@ export interface SimpleDialogProps {
 	onClose: (value: string) => void;
 }
 
-function CreateInvoiceDialog(props: SimpleDialogProps) {
+function ConnectToPeerDialog(props: SimpleDialogProps) {
 	const { onClose, selectedValue, open } = props;
+	const [peer_node_id, setPeerNode] = React.useState("0278812262d0fe8f7998f720c36b6a66f4b62fb6f73c91515f7c1f0e223f13bd48");
+	const [peer_net_address, setPeerNetAddress] = React.useState("0.0.0.0:9733");
 	const [message, setMessage] = React.useState("");
-	const [amount_msat, setAmountMSat] = React.useState(0);
-	const [expiry_secs, setExpirySecs] = React.useState(0);
-	const [description, setDescription] = React.useState("");
 	const [isSnackbarOpen, setIssnackbarOpen] = React.useState(false);
 
-	async function create_invoice() {
+	async function connect_to_peer() {
 		try {
-			let res = await invoke("create_invoice", {
-				amount_msat,
-				description,
-				expiry_secs,
+			const data = {
+				nodeId: peer_node_id,
+				netAddress: peer_net_address,
+			}
+			console.log(data);
+			let res = await invoke("connect_to_node", {
+				...data
 			});
 			if (res) {
-				setMessage("Successfully created invoice");
+				setMessage("Successfully connected to peer");
 			}
-			setMessage("Failed to create invoice");
-			setIssnackbarOpen(true);
-			handleClose();
+			setMessage(String(res));
+			setIssnackbarOpen(true)
+			// handleClose();
 		} catch (e) {
 			console.log(e);
-			setMessage("Failed to create invoice");
-			setIssnackbarOpen(true);
+			setMessage(String(e));
+			setIssnackbarOpen(true)
 		}
 	}
 
-	const title = "Create (Bolt11) Invoice";
+	React.useEffect(() => {
+		return () => setIssnackbarOpen(false)
+	},[])
+
+	const title = "Enter Peer Node Details";
 
 	const handleClose = () => {
 		onClose(selectedValue);
@@ -67,28 +73,19 @@ function CreateInvoiceDialog(props: SimpleDialogProps) {
 			<List sx={{ p: 6 }}>
 				<ListItem disableGutters>
 					<TextField
-						value={amount_msat}
-						onChange={(e) => setAmountMSat(Number(e.target.value))}
+						value={peer_node_id}
+						onChange={(e) => setPeerNode(e.target.value)}
 						style={{ width: "100%" }}
-						label="Amount (msat)"
+						label="Peer Node Id"
 						variant="outlined"
 					/>
 				</ListItem>
 				<ListItem disableGutters>
 					<TextField
-						value={expiry_secs}
-						onChange={(e) => setExpirySecs(Number(e.target.value))}
+						value={peer_net_address}
+						onChange={(e) => setPeerNetAddress(e.target.value)}
 						style={{ width: "100%" }}
-						label="Expiry (secs)"
-						variant="outlined"
-					/>
-				</ListItem>
-				<ListItem disableGutters>
-					<TextField
-						value={description}
-						onChange={(e) => setDescription(e.target.value)}
-						style={{ width: "100%" }}
-						label="Description"
+						label="Peer Net Address"
 						variant="outlined"
 					/>
 				</ListItem>
@@ -96,15 +93,15 @@ function CreateInvoiceDialog(props: SimpleDialogProps) {
 					<Button
 						style={buttonStyle}
 						variant="contained"
-						onClick={create_invoice}
+						onClick={connect_to_peer}
 					>
 						Connect
 					</Button>
-					<SnackbarView message={message} open={isSnackbarOpen} setOpen={setIssnackbarOpen} />
+					<Snackbar message={message} open={isSnackbarOpen} setOpen={setIssnackbarOpen} />
 				</ListItem>
 			</List>
 		</Dialog>
 	);
 }
 
-export default CreateInvoiceDialog;
+export default ConnectToPeerDialog;

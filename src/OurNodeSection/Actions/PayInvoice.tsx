@@ -6,7 +6,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import SnackbarView from "../Snackbar";
+import { Snackbar } from "../../common";
 
 const buttonStyle = {
 	color: "#344e41",
@@ -78,7 +78,7 @@ function PayInvoiceDialog(props: SimpleDialogProps) {
 					>
 						Connect
 					</Button>
-					<SnackbarView message={message} open={isSnackbarOpen} setOpen={setIssnackbarOpen} />
+					<Snackbar message={message} open={isSnackbarOpen} setOpen={setIssnackbarOpen} />
 				</ListItem>
 			</List>
 		</Dialog>

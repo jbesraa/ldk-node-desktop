@@ -6,7 +6,7 @@ import IconButton from "@mui/material/IconButton";
 import BoltIcon from "@mui/icons-material/Bolt";
 import { useEffect, useState } from "react";
 import { Button } from "@mui/material";
-import { useNodeContext } from "./NodeContext";
+import { useNodeContext } from "../NodeContext";
 
 const buttonStyle = {
 	color: "#344e41",

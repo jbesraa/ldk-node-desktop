@@ -1,5 +1,5 @@
 import * as React from "react";
-import Checkbox from '@mui/material/Checkbox';
+import Checkbox from "@mui/material/Checkbox";
 import { invoke } from "@tauri-apps/api/tauri";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
@@ -7,8 +7,8 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import SnackbarView from "../Snackbar";
 import { ListItemIcon } from "@mui/material";
+import { Snackbar } from "../../common";
 
 const buttonStyle = {
 	color: "#344e41",
@@ -29,24 +29,27 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 	const [peer_node_id, setPeerNode] = React.useState("");
 	const [peer_net_address, setPeerNetAddress] = React.useState("");
 	const [message, setMessage] = React.useState("");
-	const [channel_amount_sats, setChannelAmountSats] = React.useState(0);
-	const [push_to_counterparty_msat, setPushToCounterpartyMsat] = React.useState(0);
-	const [announce_channel, setAnnounceChannel] = React.useState(false);
+	const [channel_amount_sats, setChannelAmountSats] =
+		React.useState(0);
+	const [push_to_counterparty_msat, setPushToCounterpartyMsat] =
+		React.useState(0);
+	const [announce_channel, setAnnounceChannel] =
+		React.useState(false);
 	const [isSnackbarOpen, setIssnackbarOpen] = React.useState(false);
 
 	async function open_channel() {
 		try {
-		let res: boolean = await invoke("open_channel", {});
+			let res: boolean = await invoke("open_channel", {});
 			if (res) {
 				setMessage("Successfully connected to peer");
 			}
 			setMessage("Failed to connect to peer");
-			setIssnackbarOpen(true)
+			setIssnackbarOpen(true);
 			handleClose();
 		} catch (e) {
 			console.log(e);
 			setMessage("Failed to connect to peer");
-			setIssnackbarOpen(true)
+			setIssnackbarOpen(true);
 		}
 	}
 
@@ -63,7 +66,9 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 			onClose={handleClose}
 			open={open}
 		>
-			<DialogTitle sx={{ textAlign: "center" }}>{title}</DialogTitle>
+			<DialogTitle sx={{ textAlign: "center" }}>
+				{title}
+			</DialogTitle>
 			<List sx={{ p: 6 }}>
 				<ListItem disableGutters>
 					<TextField
@@ -77,7 +82,9 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 				<ListItem disableGutters>
 					<TextField
 						value={peer_net_address}
-						onChange={(e) => setPeerNetAddress(e.target.value)}
+						onChange={(e) =>
+							setPeerNetAddress(e.target.value)
+						}
 						style={{ width: "100%" }}
 						label="Peer Net Address"
 						variant="outlined"
@@ -86,7 +93,11 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 				<ListItem disableGutters>
 					<TextField
 						value={channel_amount_sats}
-						onChange={(e) => setChannelAmountSats(Number(e.target.value))}
+						onChange={(e) =>
+							setChannelAmountSats(
+								Number(e.target.value)
+							)
+						}
 						style={{ width: "100%" }}
 						label="Channel Amount (Sats)"
 						variant="outlined"
@@ -95,7 +106,11 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 				<ListItem disableGutters>
 					<TextField
 						value={push_to_counterparty_msat}
-						onChange={(e) => setPushToCounterpartyMsat(Number(e.target.value))}
+						onChange={(e) =>
+							setPushToCounterpartyMsat(
+								Number(e.target.value)
+							)
+						}
 						style={{ width: "100%" }}
 						label="Push to Counterparty (MSats)"
 						variant="outlined"
@@ -103,7 +118,12 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 				</ListItem>
 				<ListItem disableGutters>
 					<ListItemIcon>
-					<Checkbox checked={announce_channel} onChange={() => setAnnounceChannel(!announce_channel)} />
+						<Checkbox
+							checked={announce_channel}
+							onChange={() =>
+								setAnnounceChannel(!announce_channel)
+							}
+						/>
 					</ListItemIcon>
 				</ListItem>
 				<ListItem disableGutters>
@@ -114,7 +134,11 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 					>
 						Connect
 					</Button>
-					<SnackbarView message={message} open={isSnackbarOpen} setOpen={setIssnackbarOpen} />
+					<Snackbar
+						message={message}
+						open={isSnackbarOpen}
+						setOpen={setIssnackbarOpen}
+					/>
 				</ListItem>
 			</List>
 		</Dialog>
@@ -122,4 +146,3 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 }
 
 export default OpenChannelDialog;
-
