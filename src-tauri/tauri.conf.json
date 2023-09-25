@@ -38,8 +38,8 @@
         "fullscreen": false,
         "resizable": true,
         "title": "ldk-desktop",
-        "width": 1200,
-        "height": 800
+        "width": 1800,
+        "height": 1200
       }
     ]
   }

@@ -4,6 +4,7 @@ import { NodeContextProvider } from "./NodeContext";
 import OurNodeSection from "./OurNodeSection";
 import PeersTable from "./PeersSection";
 import ChannelsSection from "./ChannelsSection";
+import PaymentsSection from "./PaymentsSection";
 
 function App() {
 	return (
@@ -13,6 +14,7 @@ function App() {
 				<OurNodeSection />
 				<PeersTable />
 				<ChannelsSection />
+				<PaymentsSection />
 			</Wrapper>
 		</NodeContextProvider>
 	);

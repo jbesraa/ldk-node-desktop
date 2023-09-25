@@ -5,7 +5,10 @@ use ldk_node::bitcoin::secp256k1::PublicKey;
 use ldk_node::bitcoin::{Network, OutPoint};
 use ldk_node::io::SqliteStore;
 use ldk_node::lightning_invoice::{Bolt11Invoice, SignedRawBolt11Invoice};
-use ldk_node::{Builder, ChannelDetails, LogLevel, NetAddress, Node, PeerDetails};
+use ldk_node::{
+    Builder, ChannelDetails, LogLevel, NetAddress, Node, PaymentDetails, PaymentDirection,
+    PaymentStatus, PeerDetails,
+};
 use std::str::FromStr;
 use std::sync::{Mutex, OnceLock};
 use std::thread;
@@ -22,13 +25,15 @@ fn main() {
             connect_to_node,
             list_peers,
             new_onchain_address,
+            disconnect_peer,
             list_channels,
             create_invoice,
             pay_invoice,
             open_channel,
             total_onchain_balance,
             is_node_running,
-            sync_wallet
+            sync_wallet,
+            list_payments
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -242,6 +247,72 @@ impl From<ChannelDetails> for ChanDetails {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+struct WrappedPaymentDetails {
+    /// The payment hash, i.e., the hash of the `preimage`.
+    pub hash: [u8; 32],
+    /// The pre-image used by the payment.
+    pub preimage: Option<[u8; 32]>,
+    /// The secret used by the payment.
+    pub secret: Option<[u8; 32]>,
+    /// The amount transferred.
+    pub amount_msat: Option<u64>,
+    /// The direction of the payment.
+    pub direction: String,
+    /// The status of the payment.
+    pub status: String,
+}
+
+impl From<PaymentDetails> for WrappedPaymentDetails {
+    fn from(payment_details: PaymentDetails) -> Self {
+        return WrappedPaymentDetails {
+            hash: payment_details.hash.0,
+            preimage: match payment_details.preimage {
+                Some(p) => Some(p.0),
+                None => None,
+            },
+            secret: match payment_details.secret {
+                Some(s) => Some(s.0),
+                None => None,
+            },
+            amount_msat: payment_details.amount_msat,
+            direction: match payment_details.direction {
+                PaymentDirection::Inbound => "Inbound".to_string(),
+                PaymentDirection::Outbound => "Outbound".to_string(),
+            },
+            status: match payment_details.status {
+                PaymentStatus::Pending => "Pending".to_string(),
+                PaymentStatus::Succeeded => "Succeeded".to_string(),
+                PaymentStatus::Failed => "Failed".to_string(),
+            },
+        };
+    }
+}
+
+#[tauri::command]
+fn list_payments(
+    state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>,
+) -> Vec<WrappedPaymentDetails> {
+    let mut node = match state.try_lock() {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return vec![];
+        }
+    };
+    let payment_details = match node.as_mut() {
+        Some(n) => n
+            .list_payments()
+            .into_iter()
+            .map(|c: PaymentDetails| WrappedPaymentDetails::from(c))
+            .collect(),
+        None => {
+            return vec![];
+        }
+    };
+    payment_details
+}
+
 #[tauri::command]
 fn list_channels(
     state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>,
@@ -319,6 +390,40 @@ fn pay_invoice(invoice: String) -> Option<[u8; 32]> {
             None
         }
     }
+}
+
+#[tauri::command]
+fn disconnect_peer(
+    state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>,
+    node_id: String,
+) -> bool {
+    let mut node = match state.try_lock() {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let pub_key = match PublicKey::from_str(&node_id) {
+        Ok(key) => key,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let node = match node.as_mut() {
+        Some(n) => n,
+        None => {
+            return false;
+        }
+    };
+    match node.disconnect(pub_key) {
+        Ok(_) => return true,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
 }
 
 #[tauri::command]
@@ -495,8 +600,9 @@ pub fn init_instance() -> Option<&'static Node<SqliteStore>> {
                 let mut builder = Builder::new();
                 builder.set_network(Network::Testnet);
                 builder.set_log_level(LogLevel::Error);
+                builder.set_storage_dir_path("/home/ecode/ldk-keys".to_string());
                 builder.set_listening_address(NetAddress::from_str("0.0.0.0:9735").unwrap());
-                builder.set_esplora_server("https://ef88-2a06-c701-779a-3000-3362-2440-c391-1af7.ngrok-free.app".to_string());
+                builder.set_esplora_server("http://127.0.0.1:3001".to_string());
                 builder.set_gossip_source_rgs(
                     "https://rapidsync.lightningdevkit.org/testnet/snapshot".to_string(),
                 );

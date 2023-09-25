@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import { createContext, useContext } from "react";
-import { ChannelDetails, PeerDetails } from "./types";
+import { ChannelDetails, PeerDetails, PaymentData } from "./types";
 
 export interface NodeActions {
 	sync_wallet: () => Promise<boolean>;
@@ -14,6 +14,7 @@ export interface NodeActions {
 	get_node_id: () => Promise<string>;
 	get_total_onchain_balance: () => Promise<number>;
 	list_channels: () => Promise<ChannelDetails[]>;
+	list_payments: () => Promise<PaymentData[]>;
 }
 
 export interface ConnectToPeerInput {
@@ -138,6 +139,19 @@ export const NodeContextProvider = ({children}:{ children: any }) => {
 		}
 	}
 
+	async function list_payments(): Promise<PaymentData[]> {
+		try {
+			let res: PaymentData[] = await invoke(
+				"list_payments",
+				{}
+			);
+			return res;
+		} catch (e) {
+			console.log("Error list_payments", e);
+			return [];
+		}
+	}
+
 	async function list_channels(): Promise<ChannelDetails[]> {
 		try {
 			let res: ChannelDetails[] = await invoke(
@@ -163,6 +177,7 @@ export const NodeContextProvider = ({children}:{ children: any }) => {
 		get_node_id,
 		get_total_onchain_balance,
 		list_channels,
+		list_payments
 	};
 
 	return (

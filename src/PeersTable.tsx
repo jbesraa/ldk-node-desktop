@@ -15,12 +15,12 @@ import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
+import DeleteIcon from "@mui/icons-material/Delete";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
-import { PeerDetails } from "../types";
-import { useNodeContext } from "../NodeContext";
-import LinkIcon from "@mui/icons-material/Link";
-import LinkOffIcon from "@mui/icons-material/LinkOff";
-import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
+import { PeerDetails } from "./types";
+import { useNodeContext } from "./NodeContext";
+import LinkIcon from '@mui/icons-material/Link';
 
 interface Data {
 	node_id: string;
@@ -182,21 +182,18 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 					Peers
 				</Typography>
 			)}
-			<Tooltip title="Connect">
-				<IconButton>
-					<LinkIcon />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Disconnect">
-				<IconButton>
-					<LinkOffIcon />
-				</IconButton>
-			</Tooltip>
-			<Tooltip title="Open Channel">
-				<IconButton>
-					<ElectricBoltIcon />
-				</IconButton>
-			</Tooltip>
+				<div>
+				<Tooltip title="Delete">
+					<IconButton>
+						<LinkIcon />
+					</IconButton>
+				</Tooltip>
+				<Tooltip title="Delete">
+					<IconButton>
+						<DeleteIcon />
+					</IconButton>
+				</Tooltip>
+				</div>
 		</Toolbar>
 	);
 }
@@ -210,16 +207,13 @@ interface TablePeerDetails {
 }
 
 export default function PeersTable() {
-	const { list_peers, is_node_running } = useNodeContext();
+	const { list_peers } = useNodeContext();
 	const [rows, setRows] = React.useState<TablePeerDetails[]>([]);
 
 	React.useEffect(() => {
 		const init = async () => {
-			let isNodeRunning = await is_node_running();
-			console.log(isNodeRunning);
-			if (!isNodeRunning) return;
 			let peers = await list_peers();
-			const new_rows: TablePeerDetails[] = peers.map(
+			const rows: TablePeerDetails[] = peers.map(
 				(row: PeerDetails) => {
 					return {
 						node_id: row.node_id,
@@ -230,18 +224,16 @@ export default function PeersTable() {
 					};
 				}
 			);
-			console.log(new_rows);
-			setRows(new_rows);
+			console.log(rows);
+			setRows(rows);
 		};
 
 		const timer = setInterval(async () => {
 			init();
 		}, 5000);
 
-		return () => {
-			clearInterval(timer);
-		};
-	}, [list_peers]);
+		return () => { clearInterval(timer); };
+	}, []);
 
 	const [order, setOrder] = React.useState<Order>("asc");
 	const [orderBy, setOrderBy] = React.useState<keyof Data>("node_id");
@@ -319,9 +311,8 @@ export default function PeersTable() {
 				page * rowsPerPage,
 				page * rowsPerPage + rowsPerPage
 			),
-		[order, orderBy, page, rowsPerPage, rows]
+		[order, orderBy, page, rowsPerPage]
 	);
-	console.log(visibleRows);
 
 	return (
 		<Box sx={{ width: "100%", paddingTop: 2 }}>

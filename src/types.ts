@@ -32,3 +32,13 @@ export interface TablePeerDetails {
 	address: string;
 	shared_channels: number;
 }
+
+export interface PaymentData {
+	hash: string;
+	preimage?: string;
+	secret?: string;
+	amount_msat: number;
+	direction: String;
+	status: String;
+}
+
