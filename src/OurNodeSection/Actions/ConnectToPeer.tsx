@@ -56,7 +56,7 @@ function ConnectToPeerDialog(props: SimpleDialogProps) {
 		return () => setIssnackbarOpen(false)
 	},[])
 
-	const title = "Enter Peer Node Details";
+	const title = "Connect To Peer";
 
 	const handleClose = () => {
 		onClose(selectedValue);

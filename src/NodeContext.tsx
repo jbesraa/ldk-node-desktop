@@ -1,6 +1,12 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { createContext, useContext } from "react";
-import { ChannelDetails, PeerDetails, PaymentData, ConnectToPeerInput } from "./types";
+import { createContext, useContext, useState } from "react";
+import {
+	ChannelDetails,
+	PeerDetails,
+	PaymentData,
+	ConnectToPeerInput,
+    BitcoinUnit,
+} from "./types";
 
 export interface NodeActions {
 	sync_wallet: () => Promise<boolean>;
@@ -13,22 +19,103 @@ export interface NodeActions {
 	get_our_address: () => Promise<string>;
 	get_node_id: () => Promise<string>;
 	get_total_onchain_balance: () => Promise<number>;
+	get_height: () => Promise<number>;
+	get_network: () => Promise<string>;
 	list_channels: () => Promise<ChannelDetails[]>;
 	list_payments: () => Promise<PaymentData[]>;
 	disconnect_peer: (i: string) => Promise<boolean>;
+	update_bitcoin_unit: (i: BitcoinUnit) => void;
+	convert_to_current_unit: (amount: number, amount_unit: BitcoinUnit) => number;
+	bitcoinUnit: BitcoinUnit;
 }
 
-export const useNodeContext = () => useContext(NodeContext)
+export const useNodeContext = () => useContext(NodeContext);
 
 export const NodeContext = createContext({} as NodeActions);
 
-export const NodeContextProvider = ({children}:{ children: any }) => {
+export const NodeContextProvider = ({
+	children,
+}: {
+	children: any;
+}) => {
+	const [bitcoinUnit, setBitcoinUnit] = useState(
+		BitcoinUnit.Satoshis
+	);
+
+	function update_bitcoin_unit(unit: BitcoinUnit) {
+		setBitcoinUnit(unit);
+	}
+
+	function convert_satoshis_to_milisatoshis(amount: number): number {
+		return amount * 1000;
+	}
+
+	function convert_milisatoshis_to_satoshis(amount: number): number {
+		return amount / 1000;
+	}
+
+	function convert_satoshis_to_btc(amount: number): number {
+		return amount / 100000000;
+	}
+
+	function convert_btc_to_satoshis(amount: number): number {
+		return amount * 100000000;
+	}
+
+	function convert_btc_to_milisatoshis(amount: number): number {
+		return amount * 100000000000;
+	}
+
+	function convert_milisatoshis_to_btc(amount: number): number {
+		return amount / 100000000000;
+	}
+
+	function convert_to_current_unit(
+		amount: number,
+		amount_unit: BitcoinUnit
+	): number {
+		if (
+			amount_unit === BitcoinUnit.Satoshis &&
+			bitcoinUnit === BitcoinUnit.MillionthSatoshis
+		) {
+			return convert_satoshis_to_milisatoshis(amount);
+		}
+		if (
+			amount_unit === BitcoinUnit.Satoshis &&
+			bitcoinUnit === BitcoinUnit.BTC
+		) {
+			return convert_satoshis_to_btc(amount);
+		}
+		if (
+			amount_unit === BitcoinUnit.MillionthSatoshis &&
+			bitcoinUnit === BitcoinUnit.Satoshis
+		) {
+			return convert_milisatoshis_to_satoshis(amount);
+		}
+		if (
+			amount_unit === BitcoinUnit.MillionthSatoshis &&
+			bitcoinUnit === BitcoinUnit.BTC
+		) {
+			return convert_milisatoshis_to_btc(amount);
+		}
+		if (
+			amount_unit === BitcoinUnit.BTC &&
+			bitcoinUnit === BitcoinUnit.Satoshis
+		) {
+			return convert_btc_to_satoshis(amount);
+		}
+		if (
+			amount_unit === BitcoinUnit.BTC &&
+			bitcoinUnit === BitcoinUnit.MillionthSatoshis
+		) {
+			return convert_btc_to_milisatoshis(amount);
+		}
+		return amount;
+	}
+
 	async function sync_wallet(): Promise<boolean> {
 		try {
-			let synced_wallet: boolean = await invoke(
-				"sync_wallet",
-				{}
-			);
+			let synced_wallet: boolean = await invoke("sync_wallet", {});
 			return synced_wallet;
 		} catch (e) {
 			console.log("Error syncing wallet", e);
@@ -52,9 +139,7 @@ export const NodeContextProvider = ({children}:{ children: any }) => {
 		}
 	}
 
-	async function disconnect_peer(
-		i: string
-	): Promise<boolean> {
+	async function disconnect_peer(i: string): Promise<boolean> {
 		try {
 			let res: boolean = await invoke("disconnect_peer", {
 				nodeId: i,
@@ -116,6 +201,30 @@ export const NodeContextProvider = ({children}:{ children: any }) => {
 		}
 	}
 
+	async function get_network(): Promise<string> {
+		try {
+			let network: string = await invoke("get_network", {});
+			return network;
+		} catch (e) {
+			console.log("Error get_network", e);
+			return "";
+		}
+	}
+
+	async function get_height(): Promise<number> {
+		try {
+			let res = 0;
+			//@ts-ignore
+			invoke("get_height", {}).then((h: number) => {
+				res = h;
+			});
+			return res;
+		} catch (e) {
+			console.log("Error get_height", e);
+			return 0;
+		}
+	}
+
 	async function get_node_id(): Promise<string> {
 		try {
 			const res: string = await invoke("get_node_id", {});
@@ -128,10 +237,7 @@ export const NodeContextProvider = ({children}:{ children: any }) => {
 
 	async function get_total_onchain_balance(): Promise<number> {
 		try {
-			const res: number = await invoke(
-				"total_onchain_balance",
-				{}
-			);
+			const res: number = await invoke("total_onchain_balance", {});
 			return res;
 		} catch (e) {
 			console.log("Error get_total_onchain_balance", e);
@@ -151,10 +257,7 @@ export const NodeContextProvider = ({children}:{ children: any }) => {
 
 	async function list_payments(): Promise<PaymentData[]> {
 		try {
-			let res: PaymentData[] = await invoke(
-				"list_payments",
-				{}
-			);
+			let res: PaymentData[] = await invoke("list_payments", {});
 			return res;
 		} catch (e) {
 			console.log("Error list_payments", e);
@@ -164,10 +267,7 @@ export const NodeContextProvider = ({children}:{ children: any }) => {
 
 	async function list_channels(): Promise<ChannelDetails[]> {
 		try {
-			let res: ChannelDetails[] = await invoke(
-				"list_channels",
-				{}
-			);
+			let res: ChannelDetails[] = await invoke("list_channels", {});
 			return res;
 		} catch (e) {
 			console.log("Error list_channels", e);
@@ -188,7 +288,12 @@ export const NodeContextProvider = ({children}:{ children: any }) => {
 		get_total_onchain_balance,
 		list_channels,
 		list_payments,
-		disconnect_peer
+		disconnect_peer,
+		get_height,
+		get_network,
+		update_bitcoin_unit,
+		convert_to_current_unit,
+		bitcoinUnit,
 	};
 
 	return (

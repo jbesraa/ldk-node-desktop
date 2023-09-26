@@ -24,7 +24,7 @@ function OurNodeActions() {
 				DialogView={PayInvoiceDialog}
 			/>
 			<DialogWindow
-				buttonTitle="CreateInvoice"
+				buttonTitle="Create Invoice"
 				DialogView={CreateInvoiceDialog}
 			/>
 		</div>

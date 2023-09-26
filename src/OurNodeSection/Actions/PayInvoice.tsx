@@ -76,7 +76,7 @@ function PayInvoiceDialog(props: SimpleDialogProps) {
 						variant="contained"
 						onClick={pay_invoice}
 					>
-						Connect
+						Pay
 					</Button>
 					<Snackbar message={message} open={isSnackbarOpen} setOpen={setIssnackbarOpen} />
 				</ListItem>

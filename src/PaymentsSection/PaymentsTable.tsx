@@ -34,6 +34,12 @@ const headCells: readonly HeadCell[] = [
 		label: "Hash",
 	},
 	{
+		id: "status",
+		numeric: true,
+		disablePadding: false,
+		label: "Status",
+	},
+	{
 		id: "amount_msat",
 		numeric: false,
 		disablePadding: false,
@@ -44,12 +50,6 @@ const headCells: readonly HeadCell[] = [
 		numeric: false,
 		disablePadding: false,
 		label: "Direction",
-	},
-	{
-		id: "status",
-		numeric: true,
-		disablePadding: false,
-		label: "Status",
 	},
 ];
 
@@ -99,7 +99,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 				{headCells.map((headCell) => (
 					<TableCell
 						key={headCell.id}
-						align={headCell.numeric ? "right" : "left"}
+						align={"left"}
 						padding={headCell.disablePadding ? "none" : "normal"}
 						sortDirection={orderBy === headCell.id ? order : false}
 					>
@@ -322,13 +322,15 @@ export default function PaymentsTable() {
 										>
 											{row.hash}
 										</TableCell>
-										<TableCell align="right">
+										<TableCell align="left">
+											{row.status}
+										</TableCell>
+										<TableCell align="left">
 											{row.amount_msat}
 										</TableCell>
-										<TableCell align="right">
+										<TableCell align="left">
 											{row.direction}
 										</TableCell>
-										<TableCell align="right">{row.status}</TableCell>
 									</TableRow>
 								);
 							})}

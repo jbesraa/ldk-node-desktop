@@ -7,6 +7,7 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import { useEffect, useState } from "react";
 import { Button } from "@mui/material";
 import { useNodeContext } from "../NodeContext";
+import { BitcoinUnit } from "../types";
 
 const buttonStyle = {
 	color: "#344e41",
@@ -16,9 +17,28 @@ const buttonStyle = {
 };
 
 export default function MenuAppBar() {
-	const { start_node, is_node_running } = useNodeContext();
+	const { start_node, is_node_running, get_network, bitcoinUnit, get_total_onchain_balance} =
+		useNodeContext();
 	const [boltColor, setBoltColor] = useState("inherit");
 	const [isNodeRunning, setIsNodeRunning] = useState(false);
+	const [network, setNetwork] = useState("");
+	const [onChainBalance, setOnChainBalance] = useState(0);
+
+	useEffect(() => {
+		const run = async () => {
+			let res = await get_network();
+			setNetwork(res);
+		};
+		run();
+	}, []);
+
+	useEffect(() => {
+		const timer = setInterval(async () => {
+			let onChainBalance = await get_total_onchain_balance();
+			setOnChainBalance(onChainBalance);
+		}, 10000);
+		return () => clearInterval(timer);
+	}, []);
 
 	useEffect(() => {
 		const timer = setInterval(async () => {
@@ -56,9 +76,6 @@ export default function MenuAppBar() {
 					<div>
 						<IconButton
 							size="large"
-							aria-label="account of current user"
-							aria-controls="menu-appbar"
-							aria-haspopup="true"
 							onClick={start_node}
 							color="inherit"
 							disabled={isNodeRunning}
@@ -71,7 +88,30 @@ export default function MenuAppBar() {
 								}
 								variant="contained"
 							>
-								{isNodeRunning ? "ON" : "Start Node" }
+								{isNodeRunning ? "ON" : "Start Node"}
+							</Button>
+						</IconButton>
+						<IconButton size="large" color="inherit" disabled={true}>
+							<Button style={buttonStyle} variant="contained">
+								Network: {network}
+							</Button>
+						</IconButton>
+						<IconButton disabled={true} onClick={start_node} color="inherit">
+							<Button
+								style={buttonStyle}
+								variant="contained"
+								disabled={true}
+							>
+								Unit: {bitcoinUnit}
+							</Button>
+						</IconButton>
+						<IconButton disabled={true} onClick={start_node} color="inherit">
+							<Button
+								style={buttonStyle}
+								variant="contained"
+								disabled={true}
+							>
+								On Chain Balance: {onChainBalance} 
 							</Button>
 						</IconButton>
 					</div>

@@ -47,4 +47,8 @@ export interface ConnectToPeerInput {
 	net_address: string;
 }
 
-
+export enum BitcoinUnit {
+	Satoshis = "Satoshis",
+	MillionthSatoshis = "Mil Satoshis",
+	BTC = "BTC",
+}

@@ -98,7 +98,7 @@ function CreateInvoiceDialog(props: SimpleDialogProps) {
 						variant="contained"
 						onClick={create_invoice}
 					>
-						Connect
+						Create
 					</Button>
 					<Snackbar message={message} open={isSnackbarOpen} setOpen={setIssnackbarOpen} />
 				</ListItem>

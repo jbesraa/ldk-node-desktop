@@ -7,7 +7,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { ListItemIcon } from "@mui/material";
+import { ListItemIcon, ListItemText } from "@mui/material";
 import { Snackbar } from "../../common";
 
 const buttonStyle = {
@@ -46,7 +46,6 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 				pushToCounterpartyMsat: push_to_counterparty_msat,
 				announceChannel: announce_channel,
 			});
-			console.log("hhh", res);
 			if (res) {
 				setMessage("Successfully connected to peer");
 			}
@@ -60,7 +59,7 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 		}
 	}
 
-	const title = "Enter Peer Node Details";
+	const title = "Open Channel";
 
 	const handleClose = () => {
 		onClose(selectedValue);
@@ -124,6 +123,7 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 					/>
 				</ListItem>
 				<ListItem disableGutters>
+					<ListItemText>Announce Channel</ListItemText>
 					<ListItemIcon>
 						<Checkbox
 							checked={announce_channel}
@@ -139,7 +139,7 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 						variant="contained"
 						onClick={open_channel}
 					>
-						Connect
+						Open
 					</Button>
 					<Snackbar
 						message={message}

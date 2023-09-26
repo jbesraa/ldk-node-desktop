@@ -16,11 +16,12 @@ import Checkbox from "@mui/material/Checkbox";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { visuallyHidden } from "@mui/utils";
-import { PeerDetails, CoonectToPeerInput } from "../types";
+import { PeerDetails, ConnectToPeerInput } from "../types";
 import { useNodeContext } from "../NodeContext";
 import LinkIcon from "@mui/icons-material/Link";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
-import ElectricBoltIcon from '@mui/icons-material/ElectricBolt';
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { writeText } from "@tauri-apps/api/clipboard";
 
 interface Data {
 	node_id: string;
@@ -63,12 +64,6 @@ const headCells: readonly HeadCell[] = [
 		numeric: false,
 		disablePadding: false,
 		label: "Address",
-	},
-	{
-		id: "shared_channels",
-		numeric: true,
-		disablePadding: false,
-		label: "Shared Channels",
 	},
 ];
 
@@ -149,7 +144,11 @@ interface EnhancedTableToolbarProps {
 }
 
 function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
-	const { numSelected, connectToSelectedNodes, disconnectSelectedNodes } = props;
+	const {
+		numSelected,
+		connectToSelectedNodes,
+		disconnectSelectedNodes,
+	} = props;
 
 	return (
 		<Toolbar
@@ -207,7 +206,12 @@ interface TablePeerDetails {
 }
 
 export default function PeersTable() {
-	const { list_peers, is_node_running, connect_to_peer, disconnect_peer } = useNodeContext();
+	const {
+		list_peers,
+		is_node_running,
+		connect_to_peer,
+		disconnect_peer,
+	} = useNodeContext();
 	const [rows, setRows] = React.useState<TablePeerDetails[]>([]);
 
 	React.useEffect(() => {
@@ -318,29 +322,35 @@ export default function PeersTable() {
 	);
 
 	const connectToSelectedNodes = async () => {
-		const nodes: CoonectToPeerInput[] = [];
-		const selected_nodes = selected
-		for (let i=0;i<selected_nodes.length;i++){
+		const nodes: ConnectToPeerInput[] = [];
+		const selected_nodes = selected;
+		for (let i = 0; i < selected_nodes.length; i++) {
 			const nodeId = selected_nodes[i];
-			let net_address = rows.find((r) => r.node_id = nodeId)?.address;
-			if(!net_address) continue;
-			else nodes.push({node_id: nodeId, net_address: net_address})
-		};
-		await Promise.all(nodes.map((n: CoonectToPeerInput) => connect_to_peer(n)))
-	}
+			let net_address = rows.find(
+				(r) => (r.node_id = nodeId)
+			)?.address;
+			if (!net_address) continue;
+			else nodes.push({ node_id: nodeId, net_address: net_address });
+		}
+		await Promise.all(
+			nodes.map((n: ConnectToPeerInput) => connect_to_peer(n))
+		);
+	};
 
 	const disconnectSelectedNodes = async () => {
-		const nodes: string[] = selected;
-		await Promise.all(nodes.map((n: string) => disconnect_peer(n)))
-	}
+		await Promise.all(
+			selected.map((n: string) => disconnect_peer(n))
+		);
+	};
 
 	return (
 		<Box sx={{ width: "100%", paddingTop: 2 }}>
 			<Paper sx={{ width: "100%", mb: 2 }}>
-				<EnhancedTableToolbar 
+				<EnhancedTableToolbar
 					disconnectSelectedNodes={disconnectSelectedNodes}
-					connectToSelectedNodes={connectToSelectedNodes} 
-					numSelected={selected.length} />
+					connectToSelectedNodes={connectToSelectedNodes}
+					numSelected={selected.length}
+				/>
 				<TableContainer>
 					<Table
 						sx={{ minWidth: 750 }}
@@ -390,18 +400,28 @@ export default function PeersTable() {
 											scope="row"
 											padding="none"
 										>
-											{row.node_id}
+											<Typography
+												variant="subtitle1"
+												color="text.secondary"
+											>
+												{row.node_id.slice(0, 10) +
+													"..." +
+													row.node_id.slice(-10)}{" "}
+												<span
+													style={{ cursor: "pointer" }}
+													onClick={() => writeText(row.node_id)}
+												>
+													<ContentCopyIcon />
+												</span>
+											</Typography>
 										</TableCell>
-										<TableCell align="right">
+										<TableCell align="left">
 											{row.is_connected}
 										</TableCell>
-										<TableCell align="right">
+										<TableCell align="left">
 											{row.is_persisted}
 										</TableCell>
-										<TableCell align="right">{row.address}</TableCell>
-										<TableCell align="right">
-											{row.shared_channels}
-										</TableCell>
+										<TableCell align="left">{row.address}</TableCell>
 									</TableRow>
 								);
 							})}

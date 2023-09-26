@@ -33,7 +33,9 @@ fn main() {
             total_onchain_balance,
             is_node_running,
             sync_wallet,
-            list_payments
+            list_payments,
+            get_network,
+            get_height
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -513,7 +515,6 @@ fn list_peers(
             return vec![];
         }
     };
-    dbg!(&node);
     node
 }
 
@@ -536,6 +537,29 @@ fn spendable_on_chain(state: tauri::State<Mutex<Option<&'static Node<SqliteStore
         },
         None => {
             return 0;
+        }
+    }
+}
+
+#[tauri::command]
+async fn get_height() -> Result<u32, ()> {
+    let node = init_instance().unwrap();
+    node.height().await.map_err(|_| ())
+}
+
+#[tauri::command]
+fn get_network(state: tauri::State<Mutex<Option<&'static Node<SqliteStore>>>>) -> Option<Network> {
+    let mut node = match state.try_lock() {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return None;
+        }
+    };
+    match node.as_mut() {
+        Some(n) => Some(n.network()),
+        None => {
+            return None;
         }
     }
 }
@@ -600,6 +624,7 @@ pub fn init_instance() -> Option<&'static Node<SqliteStore>> {
                 let mut builder = Builder::new();
                 builder.set_network(Network::Testnet);
                 builder.set_log_level(LogLevel::Error);
+                builder.set_log_level(LogLevel::Trace);
                 builder.set_storage_dir_path("/home/ecode/ldk-keys".to_string());
                 builder.set_listening_address(NetAddress::from_str("0.0.0.0:9735").unwrap());
                 builder.set_esplora_server("http://127.0.0.1:3001".to_string());

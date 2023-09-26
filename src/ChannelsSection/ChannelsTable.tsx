@@ -16,9 +16,11 @@ import Checkbox from "@mui/material/Checkbox";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import { visuallyHidden } from "@mui/utils";
-import { ChannelDetails } from "../types";
+import { BitcoinUnit, ChannelDetails } from "../types";
 import { useNodeContext } from "../NodeContext";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
+import { writeText } from "@tauri-apps/api/clipboard";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 // channel_id: string,
 // counterparty_node_id: string,
@@ -69,62 +71,62 @@ const headCells: readonly HeadCell[] = [
 	{
 		id: "channel_value_msat",
 		numeric: true,
-		disablePadding: false,
-		label: "Channel Value (msat)",
+		disablePadding: true,
+		label: "Channel Value",
 	},
 	{
 		id: "confirmations",
 		numeric: true,
-		disablePadding: false,
+		disablePadding: true,
 		label: "Confirmations",
 	},
 	{
 		id: "is_channel_ready",
 		numeric: true,
-		disablePadding: false,
-		label: "Channel Ready",
+		disablePadding: true,
+		label: "Ready",
 	},
 	{
 		id: "balance_msat",
 		numeric: true,
-		disablePadding: false,
-		label: "Balance (MSat)",
+		disablePadding: true,
+		label: "Balance",
 	},
 	{
 		id: "is_usable",
 		numeric: true,
-		disablePadding: false,
-		label: "Is Usable",
+		disablePadding: true,
+		label: "Usable",
 	},
 	{
 		id: "is_outbound",
 		numeric: true,
-		disablePadding: false,
-		label: "Is Outbound",
+		disablePadding: true,
+		label: "Outbound",
 	},
 	{
 		id: "is_public",
 		numeric: true,
-		disablePadding: false,
-		label: "Is Public",
+		disablePadding: true,
+		label: "Public",
 	},
 	{
 		id: "counterparty_node_id",
 		numeric: false,
-		disablePadding: false,
+		disablePadding: true,
 		label: "Counterprty Node Id",
 	},
 	{
 		id: "inbound_capacity_msat",
 		numeric: true,
-		disablePadding: false,
-		label: "Inbount Capacity (MSat)",
+		disablePadding: true,
+		label: "Inbound Capacity",
 	},
 	{
 		id: "outbound_capacity_msat",
 		numeric: true,
-		disablePadding: false,
-		label: "Outbound Capacity (MSat)",
+		disablePadding: true,
+		label: "Outbound Capacity",
 	},
 ];
 
@@ -173,7 +175,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 				{headCells.map((headCell) => (
 					<TableCell
 						key={headCell.id}
-						align={headCell.numeric ? "right" : "left"}
+						align={"left"}
 						padding={headCell.disablePadding ? "none" : "normal"}
 						sortDirection={orderBy === headCell.id ? order : false}
 					>
@@ -248,7 +250,8 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 }
 
 export default function ChannelsTable() {
-	const { list_channels, is_node_running } = useNodeContext();
+	const { list_channels, is_node_running, convert_to_current_unit } =
+		useNodeContext();
 	const [rows, setRows] = React.useState<ChannelDetails[]>([]);
 
 	React.useEffect(() => {
@@ -256,7 +259,6 @@ export default function ChannelsTable() {
 			let isNodeRunning = await is_node_running();
 			if (!isNodeRunning) return;
 			let channels = await list_channels();
-			console.log(channels);
 			setRows(channels);
 		};
 
@@ -404,37 +406,55 @@ export default function ChannelsTable() {
 											scope="row"
 											padding="none"
 										>
-											{row.channel_id.slice(0,10)}..
+											{row.channel_id.slice(0, 5)}..{row.channel_id.slice(-5)}
+											<span
+												style={{ cursor: "pointer" }}
+												onClick={() => writeText(row.channel_id)}
+											>
+												<ContentCopyIcon />
+											</span>
 										</TableCell>
-										<TableCell align="right">
-											{row.channel_value_sats}
+										<TableCell align="left">
+											{convert_to_current_unit(
+												row.channel_value_sats,
+												BitcoinUnit.Satoshis
+											)}
 										</TableCell>
-										<TableCell align="right">
+										<TableCell align="left">
 											{row.confirmations}
 										</TableCell>
-										<TableCell align="right">
+										<TableCell align="left">
 											{row.is_channel_ready ? "Yes" : "No"}
 										</TableCell>
-										<TableCell align="right">
-											{row.balance_msat}
+										<TableCell align="left">
+											{convert_to_current_unit(
+												row.balance_msat,
+												BitcoinUnit.MillionthSatoshis
+											)}
 										</TableCell>
-										<TableCell align="right">
+										<TableCell align="left">
 											{row.is_usable ? "Yes" : "No"}
 										</TableCell>
-										<TableCell align="right">
+										<TableCell align="left">
 											{row.is_outbound ? "Yes" : "No"}
 										</TableCell>
-										<TableCell align="right">
+										<TableCell align="left">
 											{row.is_public ? "Yes" : "No"}
 										</TableCell>
-										<TableCell align="right">
+										<TableCell align="left">
 											{row.counterparty_node_id.slice(0, 8)}
 										</TableCell>
-										<TableCell align="right">
-											{row.inbound_capacity_msat}
+										<TableCell align="left">
+											{convert_to_current_unit(
+												row.inbound_capacity_msat,
+												BitcoinUnit.MillionthSatoshis
+											)}
 										</TableCell>
-										<TableCell align="right">
-											{row.outbound_capacity_msat}
+										<TableCell align="left">
+											{convert_to_current_unit(
+												row.outbound_capacity_msat,
+												BitcoinUnit.MillionthSatoshis
+											)}
 										</TableCell>
 									</TableRow>
 								);
