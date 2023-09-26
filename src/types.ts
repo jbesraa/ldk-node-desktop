@@ -52,3 +52,15 @@ export enum BitcoinUnit {
 	MillionthSatoshis = "Mil Satoshis",
 	BTC = "BTC",
 }
+
+export interface StartNodeInput {
+	network: Network;
+	storageDir: String;
+	listeningAddress: String;
+	esploraAddress: String;
+}
+
+export enum Network {
+	Bitcoin = "bitcoin",
+	Testnet = "testnet",
+}

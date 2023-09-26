@@ -11,13 +11,24 @@ function OurNodeData() {
 		get_node_id,
 		get_our_address,
 		new_onchain_address,
+		is_node_running
 	} = useNodeContext();
 	const [nodeId, setNodeId] = useState("");
 	const [listeningAddress, setListeningAddress] = useState("");
 	const [onChainAddress, setOnChainAddress] = useState("");
+	const [isNodeRunning, setIsNodeRunning] = useState(false);
+
+	useEffect(() => {
+		const timer = setInterval(async () => {
+			let res = await is_node_running();
+			setIsNodeRunning(res);
+		}, 10000);
+		return () => clearInterval(timer);
+	}, []);
 
 	useEffect(() => {
 		const init = async () => {
+			if(!isNodeRunning) return;
 			let node_id = await get_node_id();
 			let ourListeningAddress = await get_our_address();
 			let onChainAddress = await new_onchain_address();
@@ -25,8 +36,9 @@ function OurNodeData() {
 			setListeningAddress(ourListeningAddress);
 			setOnChainAddress(onChainAddress);
 		};
-		init();
-	}, []);
+
+		init()
+	}, [isNodeRunning]);
 
 	return (
 		<Card

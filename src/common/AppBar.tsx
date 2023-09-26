@@ -7,7 +7,8 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import { useEffect, useState } from "react";
 import { Button } from "@mui/material";
 import { useNodeContext } from "../NodeContext";
-import { BitcoinUnit } from "../types";
+import DialogWindow from "./Dialog";
+import StartNodeDialog from "../OurNodeSection/Actions/StartNode";
 
 const buttonStyle = {
 	color: "#344e41",
@@ -17,8 +18,14 @@ const buttonStyle = {
 };
 
 export default function MenuAppBar() {
-	const { start_node, is_node_running, get_network, bitcoinUnit, get_total_onchain_balance} =
-		useNodeContext();
+	const {
+		start_node,
+		sync_wallet,
+		is_node_running,
+		get_network,
+		bitcoinUnit,
+		get_total_onchain_balance,
+	} = useNodeContext();
 	const [boltColor, setBoltColor] = useState("inherit");
 	const [isNodeRunning, setIsNodeRunning] = useState(false);
 	const [network, setNetwork] = useState("");
@@ -26,19 +33,13 @@ export default function MenuAppBar() {
 
 	useEffect(() => {
 		const run = async () => {
+			let onChainBalance = await get_total_onchain_balance();
+			setOnChainBalance(onChainBalance);
 			let res = await get_network();
 			setNetwork(res);
 		};
 		run();
-	}, []);
-
-	useEffect(() => {
-		const timer = setInterval(async () => {
-			let onChainBalance = await get_total_onchain_balance();
-			setOnChainBalance(onChainBalance);
-		}, 10000);
-		return () => clearInterval(timer);
-	}, []);
+	}, [isNodeRunning]);
 
 	useEffect(() => {
 		const timer = setInterval(async () => {
@@ -50,7 +51,7 @@ export default function MenuAppBar() {
 
 	return (
 		<Box sx={{ flexGrow: 1 }}>
-			<AppBar color="transparent" position="static">
+			<AppBar color="transparent">
 				<Toolbar>
 					<IconButton
 						size="large"
@@ -80,65 +81,76 @@ export default function MenuAppBar() {
 							color="inherit"
 							disabled={isNodeRunning}
 						>
-							<Button
+							<DialogWindow
+								buttonTitle={isNodeRunning ? "On" : "Start Node"}
 								style={
 									isNodeRunning
 										? { ...buttonStyle, backgroundColor: "#dad7cd" }
 										: buttonStyle
 								}
-								variant="contained"
-							>
-								{isNodeRunning ? "ON" : "Start Node"}
-							</Button>
+								DialogView={StartNodeDialog}
+							/>
 						</IconButton>
 						<IconButton size="large" color="inherit" disabled={true}>
-							<Button style={buttonStyle} variant="contained">
+							<Button
+								style={{ ...buttonStyle, backgroundColor: "#dad7cd" }}
+								variant="contained"
+							>
 								Network: {network}
 							</Button>
 						</IconButton>
-						<IconButton disabled={true} onClick={start_node} color="inherit">
+						<IconButton
+							disabled={true}
+							onClick={start_node}
+							color="inherit"
+						>
 							<Button
-								style={buttonStyle}
+								style={{ ...buttonStyle, backgroundColor: "#dad7cd" }}
 								variant="contained"
 								disabled={true}
 							>
 								Unit: {bitcoinUnit}
 							</Button>
 						</IconButton>
-						<IconButton disabled={true} onClick={start_node} color="inherit">
+						<IconButton
+							disabled={true}
+							onClick={start_node}
+							color="inherit"
+						>
 							<Button
-								style={buttonStyle}
+								style={{ ...buttonStyle, backgroundColor: "#dad7cd" }}
 								variant="contained"
 								disabled={true}
 							>
-								On Chain Balance: {onChainBalance} 
+								On Chain Balance: {onChainBalance}
 							</Button>
 						</IconButton>
 					</div>
-					{false && (
-						<div>
-							<IconButton
-								size="large"
-								disabled={true}
-								aria-label="account of current user"
-								aria-controls="menu-appbar"
-								aria-haspopup="true"
-								onClick={() => {}}
-								color="inherit"
+					<div>
+						<IconButton
+							size="large"
+							aria-label="account of current user"
+							aria-controls="menu-appbar"
+							disabled={!isNodeRunning}
+							aria-haspopup="true"
+							onClick={sync_wallet}
+							color="inherit"
+						>
+							<Button
+								style={
+									!isNodeRunning
+										? {
+												...buttonStyle,
+												backgroundColor: "#dad7cd",
+										  }
+										: buttonStyle
+								}
+								variant="outlined"
 							>
-								<Button
-									disabled={true}
-									style={{
-										...buttonStyle,
-										backgroundColor: "#dad7cd",
-									}}
-									variant="outlined"
-								>
-									Sync Wallet
-								</Button>
-							</IconButton>
-						</div>
-					)}
+								Sync Wallet
+							</Button>
+						</IconButton>
+					</div>
 				</Toolbar>
 			</AppBar>
 		</Box>

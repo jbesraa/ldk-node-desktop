@@ -3,7 +3,7 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { useNodeContext } from "../NodeContext";
-import { BitcoinUnit, ChannelDetails } from "../types";
+import { BitcoinUnit } from "../types";
 
 interface OurNodeStatRows {
 	totalInboundCapcityMSat: number;

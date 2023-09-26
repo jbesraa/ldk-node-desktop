@@ -11,10 +11,15 @@ function App() {
 		<NodeContextProvider>
 			<Wrapper>
 				<AppBar />
-				<OurNodeSection />
-				<PeersTable />
-				<ChannelsSection />
-				<PaymentsSection />
+				<br />
+				<br />
+				<br />
+				<div style={{ height: "100vh", overflow: "scroll" }}>
+					<OurNodeSection />
+					<PeersTable />
+					<ChannelsSection />
+					<PaymentsSection />
+				</div>
 			</Wrapper>
 		</NodeContextProvider>
 	);
@@ -25,6 +30,7 @@ const Wrapper = styled.div`
 	margin-left: 8em;
 	margin-right: 8em;
 	height: 100vh;
+	overflow: hidden;
 `;
 
 export default App;

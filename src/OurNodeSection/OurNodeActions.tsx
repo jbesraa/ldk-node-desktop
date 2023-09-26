@@ -1,5 +1,6 @@
 import { CreateInvoiceDialog, OpenChannelDialog, ConnectToPeerDialog, PayInvoiceDialog } from "./Actions";
 import { DialogWindow } from "../common";
+import LogsDialog from "../LogsSections/LogsTable";
 
 function OurNodeActions() {
 	return (
@@ -26,6 +27,10 @@ function OurNodeActions() {
 			<DialogWindow
 				buttonTitle="Create Invoice"
 				DialogView={CreateInvoiceDialog}
+			/>
+			<DialogWindow
+				buttonTitle="Show Logs"
+				DialogView={LogsDialog}
 			/>
 		</div>
 	);

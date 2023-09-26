@@ -13,30 +13,11 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import { visuallyHidden } from "@mui/utils";
 import { BitcoinUnit, ChannelDetails } from "../types";
 import { useNodeContext } from "../NodeContext";
-import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import { writeText } from "@tauri-apps/api/clipboard";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-
-// channel_id: string,
-// counterparty_node_id: string,
-// // funding_txo: Option<OutPoint>,
-// channel_value_sats: number,
-// unspendable_punishment_reserve: number | null,
-// feerate_sat_per_1000_weight: number,
-// balance_msat: number,
-// outbound_capacity_msat: number,
-// inbound_capacity_msat: number,
-// confirmations_required: number | null,
-// confirmations: number | null,
-// is_outbound: boolean,
-// is_usable: boolean,
-// is_public: boolean,
-// cltv_expiry_delta: number | null,
 
 interface Data {
 	channel_id: string;
@@ -240,11 +221,11 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 					Channels
 				</Typography>
 			)}
-			<Tooltip title="Close Channel">
+			{/**<Tooltip title="Close Channel">
 				<IconButton>
 					<HighlightOffIcon />
 				</IconButton>
-			</Tooltip>
+			</Tooltip>**/}
 		</Toolbar>
 	);
 }
@@ -484,62 +465,3 @@ export default function ChannelsTable() {
 		</Box>
 	);
 }
-
-// <Card sx={{ minWidth: 275 }}>
-// 	<CardContent>
-// 		<Typography
-// 			sx={{ fontSize: 14 }}
-// 			color="text.secondary"
-// 			gutterBottom
-// 		>
-// 			Node Info
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			Channel Value: {channel_value_sats} Satoshis
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			Couterparty Node Id: {counterparty_node_id.slice(0, 23)}..
-// 			{counterparty_node_id.slice(
-// 				counterparty_node_id.length - 5,
-// 				counterparty_node_id.length - 1
-// 			)}
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			Channel Id: {channel_id}
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			Balance: {balance_msat} msat
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			Inbound Capacity: {inbound_capacity_msat} msat
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			Outbound Capacity: {outbound_capacity_msat} msat
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			{is_channel_ready ? "Channel Ready" : "Channel Not Ready"}
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			{is_usable ? "Usable" : "Not Usable"}
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			{is_public ? "Public" : "Not Public"}
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			{is_outbound ? "Outbound" : "Inbound"}
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			{confirmations} / {confirmations_required} Confirmations
-// 		</Typography>
-// 		<Typography variant="h5" component="div">
-// 			CLTV Expiry Delta: {cltv_expiry_delta}
-// 		</Typography>
-// 	</CardContent>
-// 	<CardActions>
-// 		<Button disabled={true} size="small">
-// 			More Info
-// 		</Button>
-// 	</CardActions>
-// </Card>
-// );
-// }

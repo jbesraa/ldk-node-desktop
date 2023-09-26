@@ -3,8 +3,6 @@ import Button from "@mui/material/Button";
 
 const buttonStyle = {
 	color: "#344e41",
-	fontSize: "0.8em",
-	width: "100%",
 	fontWeight: "600",
 	backgroundColor: "#a3b18a",
 };
@@ -12,9 +10,11 @@ const buttonStyle = {
 function DialogWindow({
 	DialogView,
 	buttonTitle,
+	style,
 }: {
 	DialogView: any;
 	buttonTitle: string;
+	style?: any;
 }) {
 	const [open, setOpen] = useState(false);
 	const handleClickOpen = () => {
@@ -27,7 +27,7 @@ function DialogWindow({
 	return (
 		<>
 			<Button
-				style={buttonStyle}
+				style={style ? style : buttonStyle}
 				variant="outlined"
 				onClick={handleClickOpen}
 			>
