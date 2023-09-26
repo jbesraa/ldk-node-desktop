@@ -77,7 +77,7 @@ export default function MenuAppBar() {
 					<div>
 						<IconButton
 							size="large"
-							onClick={start_node}
+							onClick={(_e) => start_node}
 							color="inherit"
 							disabled={isNodeRunning}
 						>
@@ -100,8 +100,6 @@ export default function MenuAppBar() {
 							</Button>
 						</IconButton>
 						<IconButton
-							disabled={true}
-							onClick={start_node}
 							color="inherit"
 						>
 							<Button
@@ -113,8 +111,6 @@ export default function MenuAppBar() {
 							</Button>
 						</IconButton>
 						<IconButton
-							disabled={true}
-							onClick={start_node}
 							color="inherit"
 						>
 							<Button

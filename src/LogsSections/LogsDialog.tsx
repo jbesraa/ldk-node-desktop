@@ -8,7 +8,6 @@ import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import TableRow from "@mui/material/TableRow";
-import Toolbar from "@mui/material/Toolbar";
 import Paper from "@mui/material/Paper";
 import { useNodeContext } from "../NodeContext";
 import {
@@ -19,7 +18,6 @@ import {
 } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import Typography from "@mui/material/Typography";
 
 interface Data {
 	time: string;
@@ -231,7 +229,6 @@ function LogsDialog(props: SimpleDialogProps) {
 			const log = logs[i];
 			const index = log.indexOf(" ", log.indexOf(" ") + 1);
 			const time = log.substr(0, index);
-			console.log(time);
 			const message = log.substr(index + 1);
 			const kind = message.split(" ")[0];
 			const data = {
