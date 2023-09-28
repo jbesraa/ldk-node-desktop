@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import { useNodeContext } from "../../../NodeContext";
+import { useNodeContext } from "../../../state/NodeContext";
 
 interface Data {
 	time: string;

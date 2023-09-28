@@ -16,7 +16,7 @@ import Checkbox from "@mui/material/Checkbox";
 import { visuallyHidden } from "@mui/utils";
 import { writeText } from "@tauri-apps/api/clipboard";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { useNodeContext } from "../../../NodeContext";
+import { useNodeContext } from "../../../state/NodeContext";
 import { BitcoinUnit, ChannelDetails } from "../../../types";
 
 interface Data {
