@@ -7,7 +7,7 @@ import {
 	ConnectToPeerInput,
 	BitcoinUnit,
 	StartNodeInput,
-} from "./types";
+} from "../types";
 
 export interface NodeActions {
 	get_logs: () => Promise<string[]>;

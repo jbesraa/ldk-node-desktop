@@ -13,43 +13,57 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
 import { visuallyHidden } from "@mui/utils";
-import { PaymentData } from "../types";
-import { useNodeContext } from "../NodeContext";
+import LinkIcon from "@mui/icons-material/Link";
+import LinkOffIcon from "@mui/icons-material/LinkOff";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { writeText } from "@tauri-apps/api/clipboard";
+import { useNodeContext } from "../../../state/NodeContext";
+import { ConnectToPeerInput, PeerDetails } from "../../../types";
+
+interface Data {
+	node_id: string;
+	is_connected: string;
+	is_persisted: string;
+	address: string;
+	shared_channels: number;
+}
 
 type Order = "asc" | "desc";
 
 interface HeadCell {
 	disablePadding: boolean;
-	id: keyof PaymentData;
+	id: keyof Data;
 	label: string;
 	numeric: boolean;
 }
 
 const headCells: readonly HeadCell[] = [
 	{
-		id: "hash",
+		id: "node_id",
 		numeric: false,
 		disablePadding: true,
-		label: "Hash",
+		label: "Node Id",
 	},
 	{
-		id: "status",
-		numeric: true,
-		disablePadding: false,
-		label: "Status",
-	},
-	{
-		id: "amount_msat",
+		id: "is_connected",
 		numeric: false,
 		disablePadding: false,
-		label: "Amount (msat)",
+		label: "Connected",
 	},
 	{
-		id: "direction",
+		id: "is_persisted",
 		numeric: false,
 		disablePadding: false,
-		label: "Direction",
+		label: "Persisted",
+	},
+	{
+		id: "address",
+		numeric: false,
+		disablePadding: false,
+		label: "Address",
 	},
 ];
 
@@ -57,7 +71,7 @@ interface EnhancedTableProps {
 	numSelected: number;
 	onRequestSort: (
 		event: React.MouseEvent<unknown>,
-		property: keyof PaymentData
+		property: keyof Data
 	) => void;
 	onSelectAllClick: (
 		event: React.ChangeEvent<HTMLInputElement>
@@ -77,8 +91,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 		onRequestSort,
 	} = props;
 	const createSortHandler =
-		(property: keyof PaymentData) =>
-		(event: React.MouseEvent<unknown>) => {
+		(property: keyof Data) => (event: React.MouseEvent<unknown>) => {
 			onRequestSort(event, property);
 		};
 
@@ -99,7 +112,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 				{headCells.map((headCell) => (
 					<TableCell
 						key={headCell.id}
-						align={"left"}
+						align={headCell.numeric ? "right" : "left"}
 						padding={headCell.disablePadding ? "none" : "normal"}
 						sortDirection={orderBy === headCell.id ? order : false}
 					>
@@ -126,10 +139,16 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 
 interface EnhancedTableToolbarProps {
 	numSelected: number;
+	disconnectSelectedNodes: () => void;
+	connectToSelectedNodes: () => void;
 }
 
 function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
-	const { numSelected } = props;
+	const {
+		numSelected,
+		connectToSelectedNodes,
+		disconnectSelectedNodes,
+	} = props;
 
 	return (
 		<Toolbar
@@ -161,23 +180,57 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 					id="tableTitle"
 					component="div"
 				>
-					Payments
+					Peers
 				</Typography>
 			)}
+			<Tooltip title="Connect">
+				<IconButton onClick={connectToSelectedNodes}>
+					<LinkIcon />
+				</IconButton>
+			</Tooltip>
+			<Tooltip title="Disconnect">
+				<IconButton onClick={disconnectSelectedNodes}>
+					<LinkOffIcon />
+				</IconButton>
+			</Tooltip>
 		</Toolbar>
 	);
 }
 
-export default function PaymentsTable() {
-	const { list_payments, is_node_running } = useNodeContext();
-	const [rows, setRows] = React.useState<PaymentData[]>([]);
+interface TablePeerDetails {
+	node_id: string;
+	is_connected: string;
+	is_persisted: string;
+	address: string;
+	shared_channels: number;
+}
+
+export default function PeersTable() {
+	const {
+		list_peers,
+		is_node_running,
+		connect_to_peer,
+		disconnect_peer,
+	} = useNodeContext();
+	const [rows, setRows] = React.useState<TablePeerDetails[]>([]);
 
 	React.useEffect(() => {
 		const init = async () => {
 			let isNodeRunning = await is_node_running();
 			if (!isNodeRunning) return;
-			let payments = await list_payments();
-			setRows(payments);
+			let peers = await list_peers();
+			const new_rows: TablePeerDetails[] = peers.map(
+				(row: PeerDetails) => {
+					return {
+						node_id: row.node_id,
+						is_connected: row.is_connected ? "Yes" : "No",
+						is_persisted: row.is_persisted ? "Yes" : "No",
+						address: row.address,
+						shared_channels: 0,
+					};
+				}
+			);
+			setRows(new_rows);
 		};
 
 		const timer = setInterval(async () => {
@@ -187,11 +240,10 @@ export default function PaymentsTable() {
 		return () => {
 			clearInterval(timer);
 		};
-	}, [list_payments]);
+	}, [list_peers]);
 
 	const [order, setOrder] = React.useState<Order>("asc");
-	const [orderBy, setOrderBy] =
-		React.useState<keyof PaymentData>("hash");
+	const [orderBy, setOrderBy] = React.useState<keyof Data>("node_id");
 	const [selected, setSelected] = React.useState<readonly string[]>(
 		[]
 	);
@@ -200,7 +252,7 @@ export default function PaymentsTable() {
 
 	const handleRequestSort = (
 		_event: React.MouseEvent<unknown>,
-		property: keyof PaymentData
+		property: keyof Data
 	) => {
 		const isAsc = orderBy === property && order === "asc";
 		setOrder(isAsc ? "desc" : "asc");
@@ -211,7 +263,7 @@ export default function PaymentsTable() {
 		event: React.ChangeEvent<HTMLInputElement>
 	) => {
 		if (event.target.checked) {
-			const newSelected = rows.map((n) => n.hash);
+			const newSelected = rows.map((n) => n.node_id);
 			setSelected(newSelected);
 			return;
 		}
@@ -269,10 +321,36 @@ export default function PaymentsTable() {
 		[order, orderBy, page, rowsPerPage, rows]
 	);
 
+	const connectToSelectedNodes = async () => {
+		const nodes: ConnectToPeerInput[] = [];
+		const selected_nodes = selected;
+		for (let i = 0; i < selected_nodes.length; i++) {
+			const nodeId = selected_nodes[i];
+			let net_address = rows.find(
+				(r) => (r.node_id = nodeId)
+			)?.address;
+			if (!net_address) continue;
+			else nodes.push({ node_id: nodeId, net_address: net_address });
+		}
+		await Promise.all(
+			nodes.map((n: ConnectToPeerInput) => connect_to_peer(n))
+		);
+	};
+
+	const disconnectSelectedNodes = async () => {
+		await Promise.all(
+			selected.map((n: string) => disconnect_peer(n))
+		);
+	};
+
 	return (
 		<Box sx={{ width: "100%", paddingTop: 2 }}>
 			<Paper sx={{ width: "100%", mb: 2 }}>
-				<EnhancedTableToolbar numSelected={selected.length} />
+				<EnhancedTableToolbar
+					disconnectSelectedNodes={disconnectSelectedNodes}
+					connectToSelectedNodes={connectToSelectedNodes}
+					numSelected={selected.length}
+				/>
 				<TableContainer>
 					<Table
 						sx={{ minWidth: 750 }}
@@ -289,19 +367,21 @@ export default function PaymentsTable() {
 						/>
 						<TableBody>
 							{visibleRows.map((row, index) => {
-								const isItemSelected = isSelected(String(row.hash));
+								const isItemSelected = isSelected(
+									String(row.node_id)
+								);
 								const labelId = `enhanced-table-checkbox-${index}`;
 
 								return (
 									<TableRow
 										hover
 										onClick={(event) =>
-											handleClick(event, String(row.hash))
+											handleClick(event, String(row.node_id))
 										}
 										role="checkbox"
 										aria-checked={isItemSelected}
 										tabIndex={-1}
-										key={String(row.hash)}
+										key={String(row.node_id)}
 										selected={isItemSelected}
 										sx={{ cursor: "pointer" }}
 									>
@@ -320,17 +400,28 @@ export default function PaymentsTable() {
 											scope="row"
 											padding="none"
 										>
-											{row.hash}
+											<Typography
+												variant="subtitle1"
+												color="text.secondary"
+											>
+												{row.node_id.slice(0, 10) +
+													"..." +
+													row.node_id.slice(-10)}{" "}
+												<span
+													style={{ cursor: "pointer" }}
+													onClick={() => writeText(row.node_id)}
+												>
+													<ContentCopyIcon />
+												</span>
+											</Typography>
 										</TableCell>
 										<TableCell align="left">
-											{row.status}
+											{row.is_connected}
 										</TableCell>
 										<TableCell align="left">
-											{row.amount_msat}
+											{row.is_persisted}
 										</TableCell>
-										<TableCell align="left">
-											{row.direction}
-										</TableCell>
+										<TableCell align="left">{row.address}</TableCell>
 									</TableRow>
 								);
 							})}

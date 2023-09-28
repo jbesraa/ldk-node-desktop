@@ -1,11 +1,11 @@
+import { DialogWindow } from "../../../common";
+import LogsDialog from "../LogsSections/LogsDialog";
 import {
 	CreateInvoiceDialog,
 	OpenChannelDialog,
 	ConnectToPeerDialog,
 	PayInvoiceDialog,
 } from "./Actions";
-import { DialogWindow } from "../common";
-import LogsDialog from "../LogsSections/LogsDialog";
 
 function OurNodeActions() {
 	return (

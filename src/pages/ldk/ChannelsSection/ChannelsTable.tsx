@@ -13,22 +13,24 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import { visuallyHidden } from "@mui/utils";
-import { PeerDetails, ConnectToPeerInput } from "../types";
-import { useNodeContext } from "../NodeContext";
-import LinkIcon from "@mui/icons-material/Link";
-import LinkOffIcon from "@mui/icons-material/LinkOff";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { writeText } from "@tauri-apps/api/clipboard";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { useNodeContext } from "../../../NodeContext";
+import { BitcoinUnit, ChannelDetails } from "../../../types";
 
 interface Data {
-	node_id: string;
-	is_connected: string;
-	is_persisted: string;
-	address: string;
-	shared_channels: number;
+	channel_id: string;
+	channel_value_msat: number;
+	confirmations: number;
+	is_channel_ready: string;
+	balance_msat: number;
+	is_usable: string;
+	is_outbound: string;
+	is_public: string;
+	counterparty_node_id: string;
+	inbound_capacity_msat: number;
+	outbound_capacity_msat: number;
 }
 
 type Order = "asc" | "desc";
@@ -42,28 +44,70 @@ interface HeadCell {
 
 const headCells: readonly HeadCell[] = [
 	{
-		id: "node_id",
+		id: "channel_id",
 		numeric: false,
 		disablePadding: true,
-		label: "Node Id",
+		label: "Channel ID",
 	},
 	{
-		id: "is_connected",
-		numeric: false,
-		disablePadding: false,
-		label: "Connected",
+		id: "channel_value_msat",
+		numeric: true,
+		disablePadding: true,
+		label: "Channel Value",
 	},
 	{
-		id: "is_persisted",
-		numeric: false,
-		disablePadding: false,
-		label: "Persisted",
+		id: "confirmations",
+		numeric: true,
+		disablePadding: true,
+		label: "Confirmations",
 	},
 	{
-		id: "address",
+		id: "is_channel_ready",
+		numeric: true,
+		disablePadding: true,
+		label: "Ready",
+	},
+	{
+		id: "balance_msat",
+		numeric: true,
+		disablePadding: true,
+		label: "Balance",
+	},
+	{
+		id: "is_usable",
+		numeric: true,
+		disablePadding: true,
+		label: "Usable",
+	},
+	{
+		id: "is_outbound",
+		numeric: true,
+		disablePadding: true,
+		label: "Outbound",
+	},
+	{
+		id: "is_public",
+		numeric: true,
+		disablePadding: true,
+		label: "Public",
+	},
+	{
+		id: "counterparty_node_id",
 		numeric: false,
-		disablePadding: false,
-		label: "Address",
+		disablePadding: true,
+		label: "Counterprty Node Id",
+	},
+	{
+		id: "inbound_capacity_msat",
+		numeric: true,
+		disablePadding: true,
+		label: "Inbound Capacity",
+	},
+	{
+		id: "outbound_capacity_msat",
+		numeric: true,
+		disablePadding: true,
+		label: "Outbound Capacity",
 	},
 ];
 
@@ -112,7 +156,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 				{headCells.map((headCell) => (
 					<TableCell
 						key={headCell.id}
-						align={headCell.numeric ? "right" : "left"}
+						align={"left"}
 						padding={headCell.disablePadding ? "none" : "normal"}
 						sortDirection={orderBy === headCell.id ? order : false}
 					>
@@ -139,16 +183,10 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 
 interface EnhancedTableToolbarProps {
 	numSelected: number;
-	disconnectSelectedNodes: () => void;
-	connectToSelectedNodes: () => void;
 }
 
 function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
-	const {
-		numSelected,
-		connectToSelectedNodes,
-		disconnectSelectedNodes,
-	} = props;
+	const { numSelected } = props;
 
 	return (
 		<Toolbar
@@ -180,57 +218,29 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 					id="tableTitle"
 					component="div"
 				>
-					Peers
+					Channels
 				</Typography>
 			)}
-			<Tooltip title="Connect">
-				<IconButton onClick={connectToSelectedNodes}>
-					<LinkIcon />
+			{/**<Tooltip title="Close Channel">
+				<IconButton>
+					<HighlightOffIcon />
 				</IconButton>
-			</Tooltip>
-			<Tooltip title="Disconnect">
-				<IconButton onClick={disconnectSelectedNodes}>
-					<LinkOffIcon />
-				</IconButton>
-			</Tooltip>
+			</Tooltip>**/}
 		</Toolbar>
 	);
 }
 
-interface TablePeerDetails {
-	node_id: string;
-	is_connected: string;
-	is_persisted: string;
-	address: string;
-	shared_channels: number;
-}
-
-export default function PeersTable() {
-	const {
-		list_peers,
-		is_node_running,
-		connect_to_peer,
-		disconnect_peer,
-	} = useNodeContext();
-	const [rows, setRows] = React.useState<TablePeerDetails[]>([]);
+export default function ChannelsTable() {
+	const { list_channels, is_node_running, convert_to_current_unit } =
+		useNodeContext();
+	const [rows, setRows] = React.useState<ChannelDetails[]>([]);
 
 	React.useEffect(() => {
 		const init = async () => {
 			let isNodeRunning = await is_node_running();
 			if (!isNodeRunning) return;
-			let peers = await list_peers();
-			const new_rows: TablePeerDetails[] = peers.map(
-				(row: PeerDetails) => {
-					return {
-						node_id: row.node_id,
-						is_connected: row.is_connected ? "Yes" : "No",
-						is_persisted: row.is_persisted ? "Yes" : "No",
-						address: row.address,
-						shared_channels: 0,
-					};
-				}
-			);
-			setRows(new_rows);
+			let channels = await list_channels();
+			setRows(channels);
 		};
 
 		const timer = setInterval(async () => {
@@ -240,10 +250,11 @@ export default function PeersTable() {
 		return () => {
 			clearInterval(timer);
 		};
-	}, [list_peers]);
+	}, [list_channels]);
 
 	const [order, setOrder] = React.useState<Order>("asc");
-	const [orderBy, setOrderBy] = React.useState<keyof Data>("node_id");
+	const [orderBy, setOrderBy] =
+		React.useState<keyof Data>("channel_id");
 	const [selected, setSelected] = React.useState<readonly string[]>(
 		[]
 	);
@@ -263,7 +274,7 @@ export default function PeersTable() {
 		event: React.ChangeEvent<HTMLInputElement>
 	) => {
 		if (event.target.checked) {
-			const newSelected = rows.map((n) => n.node_id);
+			const newSelected = rows.map((n) => n.channel_id);
 			setSelected(newSelected);
 			return;
 		}
@@ -321,36 +332,10 @@ export default function PeersTable() {
 		[order, orderBy, page, rowsPerPage, rows]
 	);
 
-	const connectToSelectedNodes = async () => {
-		const nodes: ConnectToPeerInput[] = [];
-		const selected_nodes = selected;
-		for (let i = 0; i < selected_nodes.length; i++) {
-			const nodeId = selected_nodes[i];
-			let net_address = rows.find(
-				(r) => (r.node_id = nodeId)
-			)?.address;
-			if (!net_address) continue;
-			else nodes.push({ node_id: nodeId, net_address: net_address });
-		}
-		await Promise.all(
-			nodes.map((n: ConnectToPeerInput) => connect_to_peer(n))
-		);
-	};
-
-	const disconnectSelectedNodes = async () => {
-		await Promise.all(
-			selected.map((n: string) => disconnect_peer(n))
-		);
-	};
-
 	return (
 		<Box sx={{ width: "100%", paddingTop: 2 }}>
 			<Paper sx={{ width: "100%", mb: 2 }}>
-				<EnhancedTableToolbar
-					disconnectSelectedNodes={disconnectSelectedNodes}
-					connectToSelectedNodes={connectToSelectedNodes}
-					numSelected={selected.length}
-				/>
+				<EnhancedTableToolbar numSelected={selected.length} />
 				<TableContainer>
 					<Table
 						sx={{ minWidth: 750 }}
@@ -368,7 +353,7 @@ export default function PeersTable() {
 						<TableBody>
 							{visibleRows.map((row, index) => {
 								const isItemSelected = isSelected(
-									String(row.node_id)
+									String(row.channel_id)
 								);
 								const labelId = `enhanced-table-checkbox-${index}`;
 
@@ -376,14 +361,16 @@ export default function PeersTable() {
 									<TableRow
 										hover
 										onClick={(event) =>
-											handleClick(event, String(row.node_id))
+											handleClick(event, String(row.channel_id))
 										}
 										role="checkbox"
 										aria-checked={isItemSelected}
 										tabIndex={-1}
-										key={String(row.node_id)}
+										key={String(row.channel_id)}
 										selected={isItemSelected}
-										sx={{ cursor: "pointer" }}
+										sx={{
+											cursor: "pointer",
+										}}
 									>
 										<TableCell padding="checkbox">
 											<Checkbox
@@ -400,28 +387,56 @@ export default function PeersTable() {
 											scope="row"
 											padding="none"
 										>
-											<Typography
-												variant="subtitle1"
-												color="text.secondary"
+											{row.channel_id.slice(0, 5)}..{row.channel_id.slice(-5)}
+											<span
+												style={{ cursor: "pointer" }}
+												onClick={() => writeText(row.channel_id)}
 											>
-												{row.node_id.slice(0, 10) +
-													"..." +
-													row.node_id.slice(-10)}{" "}
-												<span
-													style={{ cursor: "pointer" }}
-													onClick={() => writeText(row.node_id)}
-												>
-													<ContentCopyIcon />
-												</span>
-											</Typography>
+												<ContentCopyIcon />
+											</span>
 										</TableCell>
 										<TableCell align="left">
-											{row.is_connected}
+											{convert_to_current_unit(
+												row.channel_value_sats,
+												BitcoinUnit.Satoshis
+											)}
 										</TableCell>
 										<TableCell align="left">
-											{row.is_persisted}
+											{row.confirmations}
 										</TableCell>
-										<TableCell align="left">{row.address}</TableCell>
+										<TableCell align="left">
+											{row.is_channel_ready ? "Yes" : "No"}
+										</TableCell>
+										<TableCell align="left">
+											{convert_to_current_unit(
+												row.balance_msat,
+												BitcoinUnit.MillionthSatoshis
+											)}
+										</TableCell>
+										<TableCell align="left">
+											{row.is_usable ? "Yes" : "No"}
+										</TableCell>
+										<TableCell align="left">
+											{row.is_outbound ? "Yes" : "No"}
+										</TableCell>
+										<TableCell align="left">
+											{row.is_public ? "Yes" : "No"}
+										</TableCell>
+										<TableCell align="left">
+											{row.counterparty_node_id.slice(0, 8)}
+										</TableCell>
+										<TableCell align="left">
+											{convert_to_current_unit(
+												row.inbound_capacity_msat,
+												BitcoinUnit.MillionthSatoshis
+											)}
+										</TableCell>
+										<TableCell align="left">
+											{convert_to_current_unit(
+												row.outbound_capacity_msat,
+												BitcoinUnit.MillionthSatoshis
+											)}
+										</TableCell>
 									</TableRow>
 								);
 							})}

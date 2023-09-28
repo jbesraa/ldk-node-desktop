@@ -1,10 +1,10 @@
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import { useNodeContext } from "../NodeContext";
 import { useEffect, useState } from "react";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { writeText } from "@tauri-apps/api/clipboard";
+import { useNodeContext } from "../../../state/NodeContext";
 
 function OurNodeData() {
 	const {

@@ -13,61 +13,43 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
-import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { visuallyHidden } from "@mui/utils";
-import { PeerDetails } from "./types";
-import { useNodeContext } from "./NodeContext";
-import LinkIcon from "@mui/icons-material/Link";
-
-interface Data {
-	node_id: string;
-	is_connected: string;
-	is_persisted: string;
-	address: string;
-	shared_channels: number;
-}
+import { useNodeContext } from "../../../state/NodeContext";
+import { PaymentData } from "../../../types";
 
 type Order = "asc" | "desc";
 
 interface HeadCell {
 	disablePadding: boolean;
-	id: keyof Data;
+	id: keyof PaymentData;
 	label: string;
 	numeric: boolean;
 }
 
 const headCells: readonly HeadCell[] = [
 	{
-		id: "node_id",
+		id: "hash",
 		numeric: false,
 		disablePadding: true,
-		label: "Node Id",
+		label: "Hash",
 	},
 	{
-		id: "is_connected",
-		numeric: false,
-		disablePadding: false,
-		label: "Connected",
-	},
-	{
-		id: "is_persisted",
-		numeric: false,
-		disablePadding: false,
-		label: "Persisted",
-	},
-	{
-		id: "address",
-		numeric: false,
-		disablePadding: false,
-		label: "Address",
-	},
-	{
-		id: "shared_channels",
+		id: "status",
 		numeric: true,
 		disablePadding: false,
-		label: "Shared Channels",
+		label: "Status",
+	},
+	{
+		id: "amount_msat",
+		numeric: false,
+		disablePadding: false,
+		label: "Amount (msat)",
+	},
+	{
+		id: "direction",
+		numeric: false,
+		disablePadding: false,
+		label: "Direction",
 	},
 ];
 
@@ -75,7 +57,7 @@ interface EnhancedTableProps {
 	numSelected: number;
 	onRequestSort: (
 		event: React.MouseEvent<unknown>,
-		property: keyof Data
+		property: keyof PaymentData
 	) => void;
 	onSelectAllClick: (
 		event: React.ChangeEvent<HTMLInputElement>
@@ -95,7 +77,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 		onRequestSort,
 	} = props;
 	const createSortHandler =
-		(property: keyof Data) =>
+		(property: keyof PaymentData) =>
 		(event: React.MouseEvent<unknown>) => {
 			onRequestSort(event, property);
 		};
@@ -106,12 +88,8 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 				<TableCell padding="checkbox">
 					<Checkbox
 						color="primary"
-						indeterminate={
-							numSelected > 0 && numSelected < rowCount
-						}
-						checked={
-							rowCount > 0 && numSelected === rowCount
-						}
+						indeterminate={numSelected > 0 && numSelected < rowCount}
+						checked={rowCount > 0 && numSelected === rowCount}
 						onChange={onSelectAllClick}
 						inputProps={{
 							"aria-label": "select all desserts",
@@ -120,32 +98,19 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 				</TableCell>
 				{headCells.map((headCell) => (
 					<TableCell
-						key={headCell.id}
-						align={headCell.numeric ? "right" : "left"}
-						padding={
-							headCell.disablePadding
-								? "none"
-								: "normal"
-						}
-						sortDirection={
-							orderBy === headCell.id ? order : false
-						}
+						key={String(headCell.id)}
+						align={"left"}
+						padding={headCell.disablePadding ? "none" : "normal"}
+						sortDirection={orderBy === headCell.id ? order : false}
 					>
 						<TableSortLabel
 							active={orderBy === headCell.id}
-							direction={
-								orderBy === headCell.id
-									? order
-									: "asc"
-							}
+							direction={orderBy === headCell.id ? order : "asc"}
 							onClick={createSortHandler(headCell.id)}
 						>
 							{headCell.label}
 							{orderBy === headCell.id ? (
-								<Box
-									component="span"
-									sx={visuallyHidden}
-								>
+								<Box component="span" sx={visuallyHidden}>
 									{order === "desc"
 										? "sorted descending"
 										: "sorted ascending"}
@@ -196,52 +161,23 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 					id="tableTitle"
 					component="div"
 				>
-					Peers
+					Payments
 				</Typography>
 			)}
-			<div>
-				<Tooltip title="Delete">
-					<IconButton onClick={() => console.log("here")}>
-						<LinkIcon />
-					</IconButton>
-				</Tooltip>
-				<Tooltip title="Delete">
-					<IconButton>
-						<DeleteIcon />
-					</IconButton>
-				</Tooltip>
-			</div>
 		</Toolbar>
 	);
 }
 
-interface TablePeerDetails {
-	node_id: string;
-	is_connected: string;
-	is_persisted: string;
-	address: string;
-	shared_channels: number;
-}
-
-export default function PeersTable() {
-	const { list_peers } = useNodeContext();
-	const [rows, setRows] = React.useState<TablePeerDetails[]>([]);
+export default function PaymentsTable() {
+	const { list_payments, is_node_running } = useNodeContext();
+	const [rows, setRows] = React.useState<PaymentData[]>([]);
 
 	React.useEffect(() => {
 		const init = async () => {
-			let peers = await list_peers();
-			const rows: TablePeerDetails[] = peers.map(
-				(row: PeerDetails) => {
-					return {
-						node_id: row.node_id,
-						is_connected: row.is_connected ? "Yes" : "No",
-						is_persisted: row.is_persisted ? "Yes" : "No",
-						address: row.address,
-						shared_channels: 0,
-					};
-				}
-			);
-			setRows(rows);
+			let isNodeRunning = await is_node_running();
+			if (!isNodeRunning) return;
+			let payments = await list_payments();
+			setRows(payments);
 		};
 
 		const timer = setInterval(async () => {
@@ -251,11 +187,11 @@ export default function PeersTable() {
 		return () => {
 			clearInterval(timer);
 		};
-	}, []);
+	}, [list_payments]);
 
 	const [order, setOrder] = React.useState<Order>("asc");
 	const [orderBy, setOrderBy] =
-		React.useState<keyof Data>("node_id");
+		React.useState<keyof PaymentData>("hash");
 	const [selected, setSelected] = React.useState<readonly string[]>(
 		[]
 	);
@@ -264,7 +200,7 @@ export default function PeersTable() {
 
 	const handleRequestSort = (
 		_event: React.MouseEvent<unknown>,
-		property: keyof Data
+		property: keyof PaymentData
 	) => {
 		const isAsc = orderBy === property && order === "asc";
 		setOrder(isAsc ? "desc" : "asc");
@@ -275,7 +211,7 @@ export default function PeersTable() {
 		event: React.ChangeEvent<HTMLInputElement>
 	) => {
 		if (event.target.checked) {
-			const newSelected = rows.map((n) => n.node_id);
+			const newSelected = rows.map((n) => n.hash);
 			setSelected(newSelected);
 			return;
 		}
@@ -316,8 +252,7 @@ export default function PeersTable() {
 		setPage(0);
 	};
 
-	const isSelected = (name: string) =>
-		selected.indexOf(name) !== -1;
+	const isSelected = (name: string) => selected.indexOf(name) !== -1;
 
 	// Avoid a layout jump when reaching the last page with empty rows.
 	const emptyRows =
@@ -331,7 +266,7 @@ export default function PeersTable() {
 				page * rowsPerPage,
 				page * rowsPerPage + rowsPerPage
 			),
-		[order, orderBy, page, rowsPerPage]
+		[order, orderBy, page, rowsPerPage, rows]
 	);
 
 	return (
@@ -354,36 +289,28 @@ export default function PeersTable() {
 						/>
 						<TableBody>
 							{visibleRows.map((row, index) => {
-								const isItemSelected = isSelected(
-									String(row.node_id)
-								);
+								const isItemSelected = isSelected(String(row.hash));
 								const labelId = `enhanced-table-checkbox-${index}`;
 
 								return (
 									<TableRow
 										hover
 										onClick={(event) =>
-											handleClick(
-												event,
-												String(row.node_id)
-											)
+											handleClick(event, String(row.hash))
 										}
 										role="checkbox"
 										aria-checked={isItemSelected}
 										tabIndex={-1}
-										key={String(row.node_id)}
+										key={String(row.hash)}
 										selected={isItemSelected}
 										sx={{ cursor: "pointer" }}
 									>
 										<TableCell padding="checkbox">
 											<Checkbox
 												color="primary"
-												checked={
-													isItemSelected
-												}
+												checked={isItemSelected}
 												inputProps={{
-													"aria-labelledby":
-														labelId,
+													"aria-labelledby": labelId,
 												}}
 											/>
 										</TableCell>
@@ -393,19 +320,16 @@ export default function PeersTable() {
 											scope="row"
 											padding="none"
 										>
-											{row.node_id}
+											{row.hash}
 										</TableCell>
-										<TableCell align="right">
-											{row.is_connected}
+										<TableCell align="left">
+											{row.status}
 										</TableCell>
-										<TableCell align="right">
-											{row.is_persisted}
+										<TableCell align="left">
+											{row.amount_msat}
 										</TableCell>
-										<TableCell align="right">
-											{row.address}
-										</TableCell>
-										<TableCell align="right">
-											{row.shared_channels}
+										<TableCell align="left">
+											{row.direction}
 										</TableCell>
 									</TableRow>
 								);

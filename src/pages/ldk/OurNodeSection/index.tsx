@@ -8,7 +8,6 @@ const OurNodeSection = () => {
 			<div
 				style={{
 					gridGap: "0.8em",
-					paddingTop: "2em",
 					display: "grid",
 					gridTemplateColumns: "1fr 1fr",
 				}}

@@ -6,9 +6,9 @@ import IconButton from "@mui/material/IconButton";
 import BoltIcon from "@mui/icons-material/Bolt";
 import { useEffect, useState } from "react";
 import { Button } from "@mui/material";
-import { useNodeContext } from "../NodeContext";
+import { useNodeContext } from "../state/NodeContext";
 import DialogWindow from "./Dialog";
-import StartNodeDialog from "../OurNodeSection/Actions/StartNode";
+import StartNodeDialog from "../pages/ldk/OurNodeSection/Actions/StartNode";
 
 const buttonStyle = {
 	color: "#344e41",
