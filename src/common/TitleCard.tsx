@@ -1,4 +1,5 @@
-import { Button, Card, CardContent, Typography } from "@mui/material";
+import { Card, CardContent, Typography } from "@mui/material";
+import { DropdownButton } from ".";
 
 function TitleCard({
     title,
@@ -22,7 +23,20 @@ function TitleCard({
                 <Typography variant="overline" color="gray">
                     {title}
                 </Typography>
-                <Button sx={{ justifySelf: "end" }}> Actions </Button>
+                <DropdownButton 
+                    options={[
+                    {name: "0", val: "Connect to Lightning Peer"},
+                    {name: "0", val: "Open Lightning Channel"},
+                    {name: "0", val: "Close Lightning Channel"},
+                    {name: "0", val: "Show Lightning Logs"},
+                    {name: "0", val: "Create Invoice"},
+                    {name: "0", val: "Pay Invoice"},
+                    ]}
+                    label="Actions"
+                    selectedValue=""
+                    onChange={(e) => { console.log(e) }}
+                />
+                {/**<Button sx={{ justifySelf: "end" }}> Actions </Button>**/}
                 </div>
                 <Typography variant="h2" color="#344e41">
                     {value}

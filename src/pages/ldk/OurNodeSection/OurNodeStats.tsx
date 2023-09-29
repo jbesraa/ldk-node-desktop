@@ -9,7 +9,6 @@ interface OurNodeStatRows {
 	totalInboundCapcityMSat: number;
 	totalBalanceMSat: number;
 	totalOutboundCapcityMSat: number;
-	totalChannelsValueSat: number;
 }
 
 function OurNodeStats() {
@@ -24,13 +23,11 @@ function OurNodeStats() {
 			let totalInboundCapcityMSat = channels.reduce((acc, curr) => acc + curr.inbound_capacity_msat, 0);
 			let totalBalanceMSat = channels.reduce((acc, curr) => acc + curr.balance_msat, 0);
 			let totalOutboundCapcityMSat = channels.reduce((acc, curr) => acc + curr.outbound_capacity_msat, 0);
-			let totalChannelsValueSat = channels.reduce((acc, curr) => acc + curr.channel_value_sats, 0);
 
 			setStats({
 				totalInboundCapcityMSat,
 				totalBalanceMSat,
 				totalOutboundCapcityMSat,
-				totalChannelsValueSat,
 			});
 		};
 
@@ -89,23 +86,11 @@ function OurNodeStats() {
 			</Card>
 			<Card sx={CardStyle} >
 				<CardContent>
-					<Typography sx={CardItemTitleStyle} color="text.secondary">
+					<Typography sx={CardItemTitleStyle} color="gray">
 						Total Outbound Liquidity 
 					</Typography>
-					<Typography sx={CardItemValueStyle} color="text.secondary">
-						{convert_to_current_unit(stats.totalOutboundCapcityMSat, BitcoinUnit.MillionthSatoshis)}
-					</Typography>
-				</CardContent>
-			</Card>
-			<Card
-				sx={CardStyle}
-			>
-				<CardContent>
-					<Typography sx={CardItemTitleStyle} color="text.secondary">
-						Total Channels Value
-					</Typography>
-					<Typography sx={CardItemValueStyle} color="text.secondary">
-						{convert_to_current_unit(stats.totalChannelsValueSat, BitcoinUnit.Satoshis)}
+					<Typography sx={CardItemValueStyle} variant="h3" color="white">
+						{convert_to_current_unit(stats.totalOutboundCapcityMSat, BitcoinUnit.MillionthSatoshis) || 0} {bitcoinUnit}
 					</Typography>
 				</CardContent>
 			</Card>

@@ -11,8 +11,8 @@ function SideBarCard({
     const { current_route, push_route } = useRouterContext();
     const isSelected = path === current_route;
     const CardStyle = {
-        color: "white",
-        backgroundColor: isSelected ?  "#a3b18a" : "transparent",
+        backgroundColor: "transparent",
+        // backgroundColor: isSelected ?  "#a3b18a" : "transparent",
         // backgroundColor: isSelected ? "#344e41" : "#a3b18a",
         border: 0,
         width: 200,
@@ -33,7 +33,7 @@ function SideBarCard({
                     align="center"
                     style={TitleStyle}
                     variant="caption"
-                    color={isSelected ?  "white" : "black" }
+                    color={isSelected ?  "#344e41" : "white" }
                     // color="#344e41"
                 >
                     {title}

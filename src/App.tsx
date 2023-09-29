@@ -18,10 +18,16 @@ function App() {
                         gridTemplateColumns: "1fr 7fr",
                     }}
                 >
-                    <Paper style={{ width: 200, maxHeight: "70vh", backgroundColor: "transparent" }}>
-                    <div style={{ height: "50vh" }}>
-                    <SideBar />
-                    </div>
+                    <Paper
+                        style={{
+                            width: 200,
+                            maxHeight: "90vh",
+                            backgroundColor: "transparent",
+                        }}
+                    >
+                        <div style={{ height: "50vh" }}>
+                            <SideBar />
+                        </div>
                     </Paper>
                     <Wrapper>
                         <div
@@ -42,7 +48,7 @@ function App() {
 const Wrapper = styled.div`
     margin-left: 6em;
     margin-right: 8em;
-    height: 100vh;
+    height: 90vh;
     overflow: hidden;
 `;
 

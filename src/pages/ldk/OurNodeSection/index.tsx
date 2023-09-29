@@ -5,8 +5,8 @@ import OurNodeStats from "./OurNodeStats";
 const OurNodeSection = () => {
     return (
         <div>
-                <OurNodeData />
-                {/** <OurNodeActions />**/}
+            <OurNodeData />
+            {/** <OurNodeActions />**/}
             <OurNodeStats />
         </div>
     );
