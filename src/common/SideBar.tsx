@@ -1,4 +1,4 @@
-import { Card, CardContent, Typography } from "@mui/material";
+import { Card, CardContent, Paper, Typography } from "@mui/material";
 import { useRouterContext } from "../state/RouterContext";
 
 function SideBarCard({
@@ -11,23 +11,30 @@ function SideBarCard({
     const { current_route, push_route } = useRouterContext();
     const isSelected = path === current_route;
     const CardStyle = {
-        width: 140,
-        maxHeight: 120,
-        color: "#344e41",
-        backgroundColor: !isSelected ? "#dad7cd" : "white",
-        boxShadow: 8,
-        borderRadius: 5,
+        color: "white",
+        backgroundColor: isSelected ?  "#a3b18a" : "transparent",
+        // backgroundColor: isSelected ? "#344e41" : "#a3b18a",
+        border: 0,
+        width: 200,
+        boxShadow: 0,
+        borderRadius:0,
         cursor: "pointer",
     };
+
+    const TitleStyle = {
+          fontSize: "1.4em",
+          // textDecoration: isSelected ? "underline"  : "none"
+    }
 
     return (
         <Card sx={CardStyle} onClick={() => push_route(path)}>
             <CardContent>
                 <Typography
                     align="center"
-                    style={{ fontSize: "1.4em" }}
+                    style={TitleStyle}
                     variant="caption"
-                    color="text.secondary"
+                    color={isSelected ?  "white" : "black" }
+                    // color="#344e41"
                 >
                     {title}
                 </Typography>
@@ -38,10 +45,11 @@ function SideBarCard({
 
 function SideBar() {
     return (
-        <div style={{ display: "grid", maxHeight: 400 }}>
+        <div style={{ display: "grid" }}>
             <SideBarCard title={"Dashboard"} path="dashboard" />
             <SideBarCard title={"Bitcoin"} path="bitcoin" />
             <SideBarCard title={"LDK"} path="ldk" />
+            <SideBarCard title={"Settings"} path="settings" />
         </div>
     );
 }

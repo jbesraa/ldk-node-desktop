@@ -1,4 +1,6 @@
 import { Card, CardContent, Typography } from "@mui/material";
+import { TitleCard } from "../../common";
+import { useNodeContext } from "../../state/NodeContext";
 
 function BitcoinScreenCard({
     title,
@@ -10,17 +12,16 @@ function BitcoinScreenCard({
     const CardStyle = {
         minWidth: 265,
         minHeight: "20vh",
-        color: "#344e41",
-        backgroundColor: "#dad7cd",
+        backgroundColor: "#344e41",
     };
 
     return (
         <Card sx={CardStyle}>
             <CardContent>
-                <Typography variant="overline" color="text.secondary">
+                <Typography variant="overline" color="gray">
                     {title}
                 </Typography>
-                <Typography variant="h2" color="black">
+                <Typography variant="h2" color="white">
                     {value}
                 </Typography>
             </CardContent>
@@ -29,7 +30,14 @@ function BitcoinScreenCard({
 }
 
 function BitcoinScreen() {
+    const { bitcoinUnit } = useNodeContext();
+
     return (
+        <>
+        <TitleCard
+            title="Bitcoin"
+            value="Running"
+        />
         <div
             style={{
                 display: "grid",
@@ -37,13 +45,10 @@ function BitcoinScreen() {
                 gridGap: "1em",
             }}
         >
-            <BitcoinScreenCard
-                title={"Current Block"}
-                value={"123456678"}
-            />
-            <BitcoinScreenCard title={"Balance"} value={"21 BTC"} />
+            <BitcoinScreenCard title={"Balance"} value={`21 ${bitcoinUnit}`} />
             <BitcoinScreenCard title={"Sync"} value={"100%"} />
         </div>
+    </>
     );
 }
 

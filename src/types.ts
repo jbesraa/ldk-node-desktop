@@ -48,8 +48,8 @@ export interface ConnectToPeerInput {
 }
 
 export enum BitcoinUnit {
-	Satoshis = "Satoshis",
-	MillionthSatoshis = "Mil Satoshis",
+	Satoshis = "Sats",
+	MillionthSatoshis = "MSats",
 	BTC = "BTC",
 }
 

@@ -15,7 +15,6 @@ function OurNodeData() {
 	} = useNodeContext();
 	const [nodeId, setNodeId] = useState("");
 	const [listeningAddress, setListeningAddress] = useState("");
-	const [onChainAddress, setOnChainAddress] = useState("");
 	const [isNodeRunning, setIsNodeRunning] = useState(false);
 
 	useEffect(() => {
@@ -31,10 +30,8 @@ function OurNodeData() {
 			if(!isNodeRunning) return;
 			let node_id = await get_node_id();
 			let ourListeningAddress = await get_our_address();
-			let onChainAddress = await new_onchain_address();
 			setNodeId(node_id);
 			setListeningAddress(ourListeningAddress);
-			setOnChainAddress(onChainAddress);
 		};
 
 		init()
@@ -44,26 +41,19 @@ function OurNodeData() {
 		<Card
 			sx={{
 				minWidth: 275,
-				color: "#344e41",
-				backgroundColor: "#dad7cd",
+				backgroundColor: "#344e41",
 			}}
 		>
 			<CardContent>
-				<Typography variant="subtitle1" color="text.secondary" >
+				<Typography variant="subtitle1" color="white" >
 					Node ID: {nodeId.slice(0, 10) + "..." + nodeId.slice(-10)}{" "}
 					<span style={{ cursor: "pointer" }}onClick={() => writeText(nodeId)}>
 						<ContentCopyIcon />
 					</span>
 				</Typography>
-				<Typography variant="subtitle1" color="text.secondary" >
+				<Typography variant="subtitle1" color="white" >
 					Address: {listeningAddress}
 					<span style={{ cursor: "pointer" }}onClick={() => writeText(listeningAddress)}>
-						<ContentCopyIcon />
-					</span>
-				</Typography>
-				<Typography variant="subtitle1" color="text.secondary" >
-					On chain Address: {onChainAddress}
-					<span style={{ cursor: "pointer" }}onClick={() => writeText(onChainAddress)}>
 						<ContentCopyIcon />
 					</span>
 				</Typography>

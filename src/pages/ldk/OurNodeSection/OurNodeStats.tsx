@@ -13,7 +13,7 @@ interface OurNodeStatRows {
 }
 
 function OurNodeStats() {
-	const { list_channels, is_node_running, convert_to_current_unit} = useNodeContext();
+	const { list_channels, is_node_running, convert_to_current_unit, bitcoinUnit} = useNodeContext();
 	const [stats, setStats] = useState<OurNodeStatRows>({} as OurNodeStatRows);
 
 	useEffect(() => {
@@ -44,9 +44,9 @@ function OurNodeStats() {
 	}, [list_channels]);
 
 	const CardStyle = {
-		minWidth: 275,
-		color: "#344e41",
-		backgroundColor: "#dad7cd",
+        width: 323,
+        height: 143,
+		backgroundColor: "#344e41",
 	};
 
 	const CardItemTitleStyle = {
@@ -62,28 +62,28 @@ function OurNodeStats() {
 		<div
 			style={{
 				display: "grid",
-				gridTemplateColumns: "1fr 1fr 1fr 1fr",
+				gridTemplateColumns: "1fr 1fr 1fr",
 				paddingTop: "1em",
 				gridGap: "1em",
 			}}
 		>
 			<Card sx={CardStyle} >
 				<CardContent>
-					<Typography sx={CardItemTitleStyle} color="text.secondary">
+					<Typography sx={CardItemTitleStyle} color="gray">
 						Total Balance Across Channels
 					</Typography>
-					<Typography sx={CardItemValueStyle} color="text.secondary">
-						{convert_to_current_unit(stats.totalBalanceMSat, BitcoinUnit.MillionthSatoshis)}
+					<Typography variant="h3"sx={CardItemValueStyle} color="white">
+						{convert_to_current_unit(stats.totalBalanceMSat, BitcoinUnit.MillionthSatoshis) || 0} {bitcoinUnit} 
 					</Typography>
 				</CardContent>
 			</Card>
 			<Card sx={CardStyle} >
 				<CardContent>
-					<Typography sx={CardItemTitleStyle} color="text.secondary">
+					<Typography sx={CardItemTitleStyle} color="gray">
 						Total Inbound Liquidity
 					</Typography>
-					<Typography sx={CardItemValueStyle} color="text.secondary">
-						{convert_to_current_unit(stats.totalInboundCapcityMSat, BitcoinUnit.MillionthSatoshis)}
+					<Typography variant="h3" sx={CardItemValueStyle} color="white">
+						{convert_to_current_unit(stats.totalInboundCapcityMSat, BitcoinUnit.MillionthSatoshis) || 0} {bitcoinUnit}
 					</Typography>
 				</CardContent>
 			</Card>

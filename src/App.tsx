@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { AppBar, SideBar } from "./common";
 import { NodeContextProvider } from "./state/NodeContext";
 import { Router, RouterContextProvider } from "./state/RouterContext";
+import { Paper } from "@mui/material";
 
 function App() {
     return (
@@ -17,7 +18,11 @@ function App() {
                         gridTemplateColumns: "1fr 7fr",
                     }}
                 >
+                    <Paper style={{ width: 200, maxHeight: "70vh", backgroundColor: "transparent" }}>
+                    <div style={{ height: "50vh" }}>
                     <SideBar />
+                    </div>
+                    </Paper>
                     <Wrapper>
                         <div
                             style={{
@@ -35,8 +40,7 @@ function App() {
 }
 
 const Wrapper = styled.div`
-    margin-top: 1em;
-    margin-left: 8em;
+    margin-left: 6em;
     margin-right: 8em;
     height: 100vh;
     overflow: hidden;
