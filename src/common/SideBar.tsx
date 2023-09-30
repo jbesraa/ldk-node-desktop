@@ -32,9 +32,8 @@ function SideBarCard({
                 <Typography
                     align="center"
                     style={TitleStyle}
-                    variant="caption"
-                    color={isSelected ?  "#344e41" : "white" }
-                    // color="#344e41"
+                    variant="body2"
+                    color={isSelected ?  "#344e41" : "#a3b18a" }
                 >
                     {title}
                 </Typography>

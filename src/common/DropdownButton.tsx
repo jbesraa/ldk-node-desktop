@@ -31,7 +31,7 @@ const MultipleSelect = ({ label, options, selectedValue, onChange }: { label: st
             </InputLabel>
             <Select
                 value={selectedValue}
-                variant="filled"
+                variant="outlined"
                 onChange={onChange}
                 input={<Input id="select-multiple-chip" />}
                 MenuProps={MenuProps}

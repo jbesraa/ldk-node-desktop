@@ -3,44 +3,47 @@ import { AppBar, SideBar } from "./common";
 import { NodeContextProvider } from "./state/NodeContext";
 import { Router, RouterContextProvider } from "./state/RouterContext";
 import { Paper } from "@mui/material";
+import { BitcoinContextProvider } from "./state/BitcoinContext";
 
 function App() {
     return (
         <RouterContextProvider>
-            <NodeContextProvider>
-                <AppBar />
-                <br />
-                <br />
-                <br />
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 7fr",
-                    }}
-                >
-                    <Paper
+            <BitcoinContextProvider>
+                <NodeContextProvider>
+                    <AppBar />
+                    <br />
+                    <br />
+                    <br />
+                    <div
                         style={{
-                            width: 200,
-                            maxHeight: "90vh",
-                            backgroundColor: "transparent",
+                            display: "grid",
+                            gridTemplateColumns: "1fr 7fr",
                         }}
                     >
-                        <div style={{ height: "50vh" }}>
-                            <SideBar />
-                        </div>
-                    </Paper>
-                    <Wrapper>
-                        <div
+                        <Paper
                             style={{
-                                height: "100vh",
-                                overflow: "scroll",
+                                width: 200,
+                                maxHeight: "90vh",
+                                backgroundColor: "transparent",
                             }}
                         >
-                            <Router />
-                        </div>
-                    </Wrapper>
-                </div>
-            </NodeContextProvider>
+                            <div style={{ height: "50vh" }}>
+                                <SideBar />
+                            </div>
+                        </Paper>
+                        <Wrapper>
+                            <div
+                                style={{
+                                    height: "100vh",
+                                    overflow: "scroll",
+                                }}
+                            >
+                                <Router />
+                            </div>
+                        </Wrapper>
+                    </div>
+                </NodeContextProvider>
+            </BitcoinContextProvider>
         </RouterContextProvider>
     );
 }
