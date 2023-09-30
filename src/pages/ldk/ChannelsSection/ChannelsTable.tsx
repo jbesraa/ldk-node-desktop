@@ -243,13 +243,7 @@ export default function ChannelsTable() {
 			setRows(channels);
 		};
 
-		const timer = setInterval(async () => {
-			init();
-		}, 5000);
-
-		return () => {
-			clearInterval(timer);
-		};
+		init();
 	}, [list_channels]);
 
 	const [order, setOrder] = React.useState<Order>("asc");

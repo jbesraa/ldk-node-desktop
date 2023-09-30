@@ -233,13 +233,7 @@ export default function PeersTable() {
 			setRows(new_rows);
 		};
 
-		const timer = setInterval(async () => {
-			init();
-		}, 5000);
-
-		return () => {
-			clearInterval(timer);
-		};
+		init();
 	}, [list_peers]);
 
 	const [order, setOrder] = React.useState<Order>("asc");

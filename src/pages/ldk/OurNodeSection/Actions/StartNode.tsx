@@ -33,7 +33,8 @@ function StartNodeDialog(props: SimpleDialogProps) {
 	const [listeningAddress, setListeningAddress] =
 		React.useState("0.0.0.0:9735");
 	const [esploraAddress, setEsploraAddress] = React.useState(
-		"https://blockstream.info/testnet/api/"
+		"http://127.0.0.1:3001"
+		// "https://blockstream.info/testnet/api/"
 	);
 	const [message, setMessage] = React.useState("");
 	const [isSnackbarOpen, setIssnackbarOpen] = React.useState(false);

@@ -180,13 +180,7 @@ export default function PaymentsTable() {
 			setRows(payments);
 		};
 
-		const timer = setInterval(async () => {
-			init();
-		}, 5000);
-
-		return () => {
-			clearInterval(timer);
-		};
+		init();
 	}, [list_payments]);
 
 	const [order, setOrder] = React.useState<Order>("asc");

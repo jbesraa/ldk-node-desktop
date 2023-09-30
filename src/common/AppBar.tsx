@@ -9,6 +9,7 @@ import { Button } from "@mui/material";
 import { useNodeContext } from "../state/NodeContext";
 import DialogWindow from "./Dialog";
 import StartNodeDialog from "../pages/ldk/OurNodeSection/Actions/StartNode";
+import { useBitcoinContext } from "../state/BitcoinContext";
 
 const buttonStyle = {
     color: "white",
@@ -20,6 +21,7 @@ const buttonStyle = {
 export default function MenuAppBar() {
     const { start_node, is_node_running, get_network, bitcoinUnit } =
         useNodeContext();
+    const { connectToEsplora, currentBlock } = useBitcoinContext();
     const [boltColor, setBoltColor] = useState<string>("success");
     const [isNodeRunning, setIsNodeRunning] = useState(false);
     const [network, setNetwork] = useState("");

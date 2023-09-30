@@ -12,17 +12,39 @@ interface OurNodeStatRows {
 }
 
 function OurNodeStats() {
-	const { list_channels, is_node_running, convert_to_current_unit, bitcoinUnit} = useNodeContext();
-	const [stats, setStats] = useState<OurNodeStatRows>({} as OurNodeStatRows);
+	const {
+		list_channels,
+		is_node_running,
+		convert_to_current_unit,
+		bitcoinUnit,
+	} = useNodeContext();
+	const [stats, setStats] = useState<OurNodeStatRows>(
+		{} as OurNodeStatRows
+	);
 
 	useEffect(() => {
 		const init = async () => {
 			let isNodeRunning = await is_node_running();
 			if (!isNodeRunning) return;
 			let channels = await list_channels();
-			let totalInboundCapcityMSat = channels.reduce((acc, curr) => acc + curr.inbound_capacity_msat, 0);
-			let totalBalanceMSat = channels.reduce((acc, curr) => acc + curr.balance_msat, 0);
-			let totalOutboundCapcityMSat = channels.reduce((acc, curr) => acc + curr.outbound_capacity_msat, 0);
+			let totalInboundCapcityMSat = channels.reduce(
+				(acc, curr) =>
+					acc +
+					curr.inbound_capacity_msat,
+				0
+			);
+			let totalBalanceMSat = channels.reduce(
+				(acc, curr) =>
+					acc + curr.balance_msat,
+				0
+			);
+			let totalOutboundCapcityMSat =
+				channels.reduce(
+					(acc, curr) =>
+						acc +
+						curr.outbound_capacity_msat,
+					0
+				);
 
 			setStats({
 				totalInboundCapcityMSat,
@@ -41,8 +63,8 @@ function OurNodeStats() {
 	}, [list_channels]);
 
 	const CardStyle = {
-        width: 323,
-        height: 143,
+		width: 323,
+		height: 143,
 		backgroundColor: "#344e41",
 	};
 
@@ -64,33 +86,81 @@ function OurNodeStats() {
 				gridGap: "1em",
 			}}
 		>
-			<Card sx={CardStyle} >
+			<Card sx={CardStyle}>
 				<CardContent>
-					<Typography sx={CardItemTitleStyle} color="gray">
-						Total Balance Across Channels
+					<Typography
+						sx={
+							CardItemTitleStyle
+						}
+						color="gray"
+					>
+						Total Balance Across
+						Channels
 					</Typography>
-					<Typography variant="h3"sx={CardItemValueStyle} color="white">
-						{convert_to_current_unit(stats.totalBalanceMSat, BitcoinUnit.MillionthSatoshis) || 0} {bitcoinUnit} 
+					<Typography
+						variant="h3"
+						sx={
+							CardItemValueStyle
+						}
+						color="white"
+					>
+						{convert_to_current_unit(
+							stats.totalBalanceMSat,
+							BitcoinUnit.MillionthSatoshis
+						) || 0}{" "}
+						{bitcoinUnit}
 					</Typography>
 				</CardContent>
 			</Card>
-			<Card sx={CardStyle} >
+			<Card sx={CardStyle}>
 				<CardContent>
-					<Typography sx={CardItemTitleStyle} color="gray">
-						Total Inbound Liquidity
+					<Typography
+						sx={
+							CardItemTitleStyle
+						}
+						color="gray"
+					>
+						Total Inbound
+						Liquidity
 					</Typography>
-					<Typography variant="h3" sx={CardItemValueStyle} color="white">
-						{convert_to_current_unit(stats.totalInboundCapcityMSat, BitcoinUnit.MillionthSatoshis) || 0} {bitcoinUnit}
+					<Typography
+						variant="h3"
+						sx={
+							CardItemValueStyle
+						}
+						color="white"
+					>
+						{convert_to_current_unit(
+							stats.totalInboundCapcityMSat,
+							BitcoinUnit.MillionthSatoshis
+						) || 0}{" "}
+						{bitcoinUnit}
 					</Typography>
 				</CardContent>
 			</Card>
-			<Card sx={CardStyle} >
+			<Card sx={CardStyle}>
 				<CardContent>
-					<Typography sx={CardItemTitleStyle} color="gray">
-						Total Outbound Liquidity 
+					<Typography
+						sx={
+							CardItemTitleStyle
+						}
+						color="gray"
+					>
+						Total Outbound
+						Liquidity
 					</Typography>
-					<Typography sx={CardItemValueStyle} variant="h3" color="white">
-						{convert_to_current_unit(stats.totalOutboundCapcityMSat, BitcoinUnit.MillionthSatoshis) || 0} {bitcoinUnit}
+					<Typography
+						sx={
+							CardItemValueStyle
+						}
+						variant="h3"
+						color="white"
+					>
+						{convert_to_current_unit(
+							stats.totalOutboundCapcityMSat,
+							BitcoinUnit.MillionthSatoshis
+						) || 0}{" "}
+						{bitcoinUnit}
 					</Typography>
 				</CardContent>
 			</Card>

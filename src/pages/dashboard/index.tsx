@@ -48,7 +48,7 @@ function DashboardScreen() {
                 setCurrentBlockHeight(blockHeight)
                 setTotalOnChainBalance(balance)
             }
-            // init()
+            init()
 
             }, [get_total_onchain_balance, list_channels, currentBlock])
 

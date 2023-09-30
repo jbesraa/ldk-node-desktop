@@ -1,10 +1,11 @@
+import axios from "axios";
 import { createContext, useContext, useState } from "react";
 
 export interface BitcoinActions {
     connectToEsplora: (s: string) => Promise<boolean>;
     currentBlock: () => Promise<number>;
-    esploraUrl: string,
-    connection: BitcoinConnection
+    esploraUrl: string;
+    connection: BitcoinConnection;
 }
 
 export const useBitcoinContext = () => useContext(BitcoinContext);
@@ -13,58 +14,62 @@ export const BitcoinContext = createContext({} as BitcoinActions);
 
 enum BitcoinConnection {
     Online,
-    Offline
+    Offline,
 }
 
 export const BitcoinContextProvider = ({
-	children,
+    children,
 }: {
-	children: any;
+    children: any;
 }) => {
-    const [connection, setConnection] = useState<BitcoinConnection>(BitcoinConnection.Offline);
+    const [connection, setConnection] = useState<BitcoinConnection>(
+        BitcoinConnection.Offline
+    );
     const [esploraUrl, setEsploraUrl] = useState<string>("");
 
     async function currentBlock(): Promise<number> {
         try {
-            const block = `${esploraUrl}/currentBlock`;
+            const block = `${esploraUrl}/blocks/tip/height`;
             const response = await axios.get(block);
-            if(response.is_ok()) {
-                return Number(response.data)
+            if (response.status < 300 && response.status > 199) {
+                console.log(response.data);
+                return Number(response.data);
             }
-            return 0;
-        } catch(err) {
+            return 1;
+        } catch (err) {
             console.log(err);
-            return 0;
+            return 2;
         }
     }
 
-    async function connectToEsplora(esploraUrl: string): Promise<boolean> {
+    async function connectToEsplora(
+        esploraUrl: string
+    ): Promise<boolean> {
         try {
-            const head = `${esploraUrl}/block/head/tip`;
+            const head = `${esploraUrl}/blocks/tip/height`;
             const response = await axios.get(head);
-            if(response.is_ok()) {
+            if (response.status < 300 && response.status > 199) {
                 setEsploraUrl(esploraUrl);
                 setConnection(BitcoinConnection.Online);
                 return true;
             }
             return false;
-        } catch(err) {
+        } catch (err) {
             console.log(err);
             return false;
         }
     }
 
-	const state: BitcoinActions = {
+    const state: BitcoinActions = {
         connectToEsplora,
         currentBlock,
         esploraUrl,
-        connection
-	};
+        connection,
+    };
 
-	return (
-		<BitcoinContext.Provider value={state}>
-			{children}
-		</BitcoinContext.Provider>
-	);
+    return (
+        <BitcoinContext.Provider value={state}>
+            {children}
+        </BitcoinContext.Provider>
+    );
 };
-

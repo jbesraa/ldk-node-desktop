@@ -55,9 +55,9 @@ export enum BitcoinUnit {
 
 export interface StartNodeInput {
 	network: Network;
-	storageDir: String;
-	listeningAddress: String;
-	esploraAddress: String;
+	storageDir: string;
+	listeningAddress: string;
+	esploraAddress: string;
 }
 
 export enum Network {
