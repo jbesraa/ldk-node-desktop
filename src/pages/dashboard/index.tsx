@@ -1,5 +1,8 @@
 import { Card, CardContent, Typography } from "@mui/material";
 import { TitleCard } from "../../common";
+import { useBitcoinContext } from "../../state/BitcoinContext";
+import { useNodeContext } from "../../state/NodeContext";
+import { useEffect, useState } from "react";
 
 function DashboardScreenCard({
     title,
@@ -30,6 +33,25 @@ function DashboardScreenCard({
 }
 
 function DashboardScreen() {
+    const [channelsCount, setChannelsCount] = useState(0);
+    const [totalOnChainBalance, setTotalOnChainBalance] = useState(0);
+    const [currentBlockHeight, setCurrentBlockHeight] = useState(0);
+    const { get_total_onchain_balance, list_channels } = useNodeContext();
+    const { currentBlock } = useBitcoinContext();
+
+    useEffect(() => {
+            async function init() {
+                const balance = await get_total_onchain_balance();
+                const channels = await list_channels();
+                const blockHeight = await currentBlock();
+                setChannelsCount(channels?.length)
+                setCurrentBlockHeight(blockHeight)
+                setTotalOnChainBalance(balance)
+            }
+            // init()
+
+            }, [get_total_onchain_balance, list_channels, currentBlock])
+
     return (
         <>
             <TitleCard 
@@ -45,23 +67,23 @@ function DashboardScreen() {
             >
                 <DashboardScreenCard
                     title={"Block"}
-                    value={"242595"}
+                    value={currentBlockHeight}
                 />
                 <DashboardScreenCard
                     title={"On Chain Balance"}
-                    value={"21 BTC"}
+                    value={totalOnChainBalance}
                 />
                 <DashboardScreenCard
                     title={"LDK Balance"}
-                    value={"0.5 BTC"}
+                    value={"?"}
                 />
                 <DashboardScreenCard
                     title={"Open LDK Channels"}
-                    value={"21"}
+                    value={channelsCount}
                 />
                 <DashboardScreenCard
                     title={"Fees Earned 24h"}
-                    value={"0.5 BTC"}
+                    value={"?"}
                 />
             </div>
         </>
