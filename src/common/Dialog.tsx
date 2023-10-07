@@ -3,8 +3,8 @@ import Button from "@mui/material/Button";
 
 const buttonStyle = {
 	color: "#344e41",
-	fontWeight: "600",
-	backgroundColor: "#a3b18a",
+	// fontWeight: "600",
+	// backgroundColor: "#a3b18a",
 };
 
 function DialogWindow({

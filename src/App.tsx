@@ -4,8 +4,16 @@ import { NodeContextProvider } from "./state/NodeContext";
 import { Router, RouterContextProvider } from "./state/RouterContext";
 import { Paper } from "@mui/material";
 import { BitcoinContextProvider } from "./state/BitcoinContext";
+import { attachConsole } from "tauri-plugin-log-api";
+import { useEffect } from "react";
 
 function App() {
+
+    // with LogTarget::Webview enabled this function will print logs to the browser console
+    useEffect(() => {
+        attachConsole();
+    }, []);
+
     return (
         <RouterContextProvider>
             <BitcoinContextProvider>
@@ -23,19 +31,16 @@ function App() {
                         <Paper
                             style={{
                                 width: 200,
-                                maxHeight: "90vh",
+                                height: "90vh",
                                 backgroundColor: "transparent",
                             }}
                         >
-                            <div style={{ height: "50vh" }}>
                                 <SideBar />
-                            </div>
                         </Paper>
                         <Wrapper>
                             <div
                                 style={{
                                     height: "100vh",
-                                    overflow: "scroll",
                                 }}
                             >
                                 <Router />

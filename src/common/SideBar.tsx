@@ -45,9 +45,9 @@ function SideBarCard({
 function SideBar() {
     return (
         <div style={{ display: "grid" }}>
-            <SideBarCard title={"Dashboard"} path="dashboard" />
+            {/** <SideBarCard title={"Dashboard"} path="dashboard" /> **/}
             <SideBarCard title={"Bitcoin"} path="bitcoin" />
-            <SideBarCard title={"LDK"} path="ldk" />
+            <SideBarCard title={"Lightning"} path="ldk" />
             <SideBarCard title={"Settings"} path="settings" />
         </div>
     );

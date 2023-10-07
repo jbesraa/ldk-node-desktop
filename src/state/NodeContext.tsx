@@ -1,5 +1,10 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { createContext, useContext, useState } from "react";
+import {
+	createContext,
+	useContext,
+	useEffect,
+	useState,
+} from "react";
 import {
 	ChannelDetails,
 	PeerDetails,
@@ -9,6 +14,12 @@ import {
 	StartNodeInput,
 } from "../types";
 import { useBitcoinContext } from "./BitcoinContext";
+import {
+	trace,
+	info,
+	error,
+	attachConsole,
+} from "tauri-plugin-log-api";
 
 export interface NodeActions {
 	get_logs: () => Promise<string[]>;
@@ -22,7 +33,6 @@ export interface NodeActions {
 	get_our_address: () => Promise<string>;
 	get_node_id: () => Promise<string>;
 	get_total_onchain_balance: () => Promise<number>;
-	get_height: () => Promise<number>;
 	get_network: () => Promise<string>;
 	list_channels: () => Promise<ChannelDetails[]>;
 	list_payments: () => Promise<PaymentData[]>;
@@ -33,6 +43,7 @@ export interface NodeActions {
 		amount_unit: BitcoinUnit
 	) => number;
 	bitcoinUnit: BitcoinUnit;
+	currentBlockHeight: number;
 }
 
 export const useNodeContext = () => useContext(NodeContext);
@@ -48,6 +59,14 @@ export const NodeContextProvider = ({
 	const [bitcoinUnit, setBitcoinUnit] = useState(
 		BitcoinUnit.Satoshis
 	);
+	const [currentBlockHeight, setCurrentBlockHeight] = useState(0);
+
+	// useEffect(() => {
+	// 	const timer = setInterval(async () => {
+	// 		await get_height();
+	// 	}, 50000);
+	// 	return () => clearInterval(timer);
+	// }, []);
 
 	function update_bitcoin_unit(unit: BitcoinUnit) {
 		setBitcoinUnit(unit);
@@ -167,17 +186,23 @@ export const NodeContextProvider = ({
 
 	async function start_node(i: StartNodeInput): Promise<boolean> {
 		try {
+			info(`Starting Node: ${JSON.stringify(i)}`);
 			const esploraResponse = await connectToEsplora(
 				i.esploraAddress
 			);
+			info(`Esplora Response: ${esploraResponse}`);
 			if (esploraResponse) {
 				const res: boolean = await invoke("start_node", {
 					...i,
 				});
+				info(`Start Node Response: ${res}`);
 				return res;
 			}
 			return false;
 		} catch (e) {
+			//@ts-ignore
+			error(e.toString());
+
 			console.log("Error Starting Node", e);
 			return false;
 		}
@@ -236,17 +261,15 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function get_height(): Promise<number> {
+	async function get_height(): Promise<void> {
 		try {
-			let res = 0;
 			//@ts-ignore
 			invoke("get_height", {}).then((h: number) => {
-				res = h;
+				info(`Height: ${h}`);
+				setCurrentBlockHeight(h);
 			});
-			return res;
 		} catch (e) {
 			console.log("Error get_height", e);
-			return 0;
 		}
 	}
 
@@ -333,12 +356,12 @@ export const NodeContextProvider = ({
 		list_channels,
 		list_payments,
 		disconnect_peer,
-		get_height,
 		get_network,
 		update_bitcoin_unit,
 		convert_to_current_unit,
 		bitcoinUnit,
 		get_logs,
+		currentBlockHeight,
 	};
 
 	return (
