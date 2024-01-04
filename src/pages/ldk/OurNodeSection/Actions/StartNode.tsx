@@ -33,7 +33,9 @@ function StartNodeDialog(props: SimpleDialogProps) {
 	const [listeningAddress, setListeningAddress] =
 		React.useState("0.0.0.0:9735");
 	const [esploraAddress, setEsploraAddress] = React.useState(
-		"http://127.0.0.1:3001"
+		// "https://f0a4-2a06-c701-7781-1900-a5ea-b12c-183b-ebb2.ngrok-free.app"
+		"https://6836-2a06-c701-7781-1900-bbb-fe28-1175-661e.ngrok-free.app"
+		// "http://127.0.0.1:3001"
 		// "https://blockstream.info/testnet/api/"
 	);
 	const [message, setMessage] = React.useState("");
@@ -56,7 +58,7 @@ function StartNodeDialog(props: SimpleDialogProps) {
 			}
 			setMessage(String(res));
 			setIssnackbarOpen(true);
-			// handleClose();
+			handleClose();
 		} catch (e) {
 			console.log(e);
 			setMessage(String(e));

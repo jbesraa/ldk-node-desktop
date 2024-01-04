@@ -41,10 +41,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "resizable": true,
+        "resizable": false,
         "title": "ldk-desktop",
-        "width": 1800,
-        "height": 1200
+        "width": 2200,
+        "height": 1100
       }
     ]
   }

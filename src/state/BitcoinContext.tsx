@@ -1,5 +1,6 @@
 import axios from "axios";
 import { createContext, useContext, useState } from "react";
+import { trace, info, error } from "tauri-plugin-log-api";
 
 export interface BitcoinActions {
     connectToEsplora: (s: string) => Promise<boolean>;
@@ -47,7 +48,10 @@ export const BitcoinContextProvider = ({
     ): Promise<boolean> {
         try {
             const head = `${esploraUrl}/blocks/tip/height`;
+            info(`Esplora URL: ${head}`);
             const response = await axios.get(head);
+            info(`Esplora Response status: ${response.status}`);
+            info(`Esplora Response data: ${response.data}`);
             if (response.status < 300 && response.status > 199) {
                 setEsploraUrl(esploraUrl);
                 setConnection(BitcoinConnection.Online);
@@ -55,6 +59,7 @@ export const BitcoinContextProvider = ({
             }
             return false;
         } catch (err) {
+            error(`Esplora Error: ${err}`);
             console.log(err);
             return false;
         }

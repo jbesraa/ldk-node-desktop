@@ -1,6 +1,7 @@
-import { Button, Card, CardContent, TextField, Typography } from "@mui/material";
+import { Card, CardContent, Typography } from "@mui/material";
 import { useNodeContext } from "../../state/NodeContext";
-import { DropdownButton, TitleCard } from "../../common";
+import { TitleCard } from "../../common";
+import { createContext, useEffect, useState } from "react";
 
 // function TitleCard({
 //     title,
@@ -89,6 +90,35 @@ function BitcoinScreenCard({
                 </Typography>
             </CardContent>
         </Card>
+    );
+}
+
+const BitcoinRpcContext = createContext({} as BitcoinRpcState);
+
+interface BitcoinRpcState {
+    getCurrentHeight: () => Promise<number>;
+}
+const BitcoinRpcProvider = ({ children }: any) => {
+    const [bitcoinRpc, setBitcoinRpc] = useState(null);
+
+    useEffect(() => {
+        const rpc = new BitcoinRpc();
+        setBitcoinRpc(rpc);
+    }, []);
+
+    const getCurrentHeight = async () => {
+        const height = await bitcoinRpc?.getBlockCount();
+        return height;
+    }
+
+    const state = {
+        getCurrentHeight,
+    }
+
+    return (
+        <BitcoinRpcContext.Provider value={state}>
+            {children}
+        </BitcoinRpcContext.Provider>
     );
 }
 

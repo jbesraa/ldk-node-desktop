@@ -10,12 +10,6 @@ import { useNodeContext } from "../../../../state/NodeContext";
 import { ChannelDetails, PeerDetails } from "../../../../types";
 import SelectComponent from "../../../../common/SelectInput";
 import { info } from "tauri-plugin-log-api";
-import {
-	Checkbox,
-	ListItemIcon,
-	ListItemText,
-	TextField,
-} from "@mui/material";
 
 const buttonStyle = {
 	color: "#344e41",
@@ -31,7 +25,7 @@ export interface SimpleDialogProps {
 	onClose: (value: string) => void;
 }
 
-function OpenChannelDialog(props: SimpleDialogProps) {
+function CloseChannelDialog(props: SimpleDialogProps) {
 	const { onClose, selectedValue, open } = props;
 	const [message, setMessage] = useState("");
 	const [selectedPeerNodeId, setSelecterPeerNodeId] = useState("");
@@ -40,12 +34,9 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 	const [channelList, setChannelList] = useState<ChannelDetails[]>(
 		[]
 	);
-	const [channel_amount_sats, setChannelAmountSats] = useState(0);
 	const [isSnackbarOpen, setIssnackbarOpen] = useState(false);
 	const { list_channels, list_peers } = useNodeContext();
-	const [selectedPeerNetworkAddress, setSelectedPeerNetworkAddress] =
-		useState("");
-	const [announce_channel, setAnnounceChannel] = useState(false);
+
 	useEffect(() => {
 		const run = async () => {
 			let res = await list_channels();
@@ -62,29 +53,32 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 		run();
 	}, [list_channels]);
 
-	async function open_channel() {
+	async function close_channel() {
 		try {
-			let res: boolean = await invoke("open_channel", {
+			const data = {
 				nodeId: selectedPeerNodeId,
-				netAddress: selectedPeerNetworkAddress,
-				channelAmountSats: channel_amount_sats,
-				pushToCounterpartyMsat: 0,
-				announceChannel: announce_channel,
+				channelId: Array.from(selectedChannel)
+			};
+			info(`data channel id: ${String(data.channelId)}`);
+			let res: boolean = await invoke("close_channel", {
+				...data,
 			});
+			info(`close_channel: ${String(res)}`);
 			if (res) {
-				setMessage("Successfully opened channel");
+				setMessage("Successfully closed channel");
 			}
-			setMessage("Failed to open channel");
+			setMessage("Failed to close channel");
 			setIssnackbarOpen(true);
 			handleClose();
 		} catch (e) {
-			info(`open_channel: ${String(e)}`)
 			console.log(e);
-			setMessage("Failed to open channel");
+			info(`close_channel error: ${String(e)}`);
+			setMessage("Failed to close channel");
 			setIssnackbarOpen(true);
 		}
 	}
-	const title = "Open Channel";
+
+	const title = "Close Channel";
 
 	const handleClose = () => {
 		onClose(selectedValue);
@@ -108,46 +102,30 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 						}))}
 						selected={selectedPeerNodeId}
 						handleChange={(e) => {
-							const peer = peersList.find(
-								(p) => p.node_id == e.target.value
-							);
-							if (peer) {
-								setSelectedPeerNetworkAddress(peer.address);
-								setSelecterPeerNodeId(e.target.value);
-							}
+							setSelecterPeerNodeId(e.target.value);
 						}}
 					/>
 				</ListItem>
 				<ListItem disableGutters>
-					<TextField
-						disabled={true}
-						style={{ width: "100%" } }
-						label={"Peer Network Address"}
-						value={selectedPeerNetworkAddress}
+					<SelectComponent
+						title={"Channels"}
+						items={channelList
+							.filter(
+								(c) => c.counterparty_node_id == selectedPeerNodeId
+							)
+							.map((c) => ({
+								value: c.channel_id,
+								title: c.channel_id,
+							}))}
+						selected={selectedChannel}
+						handleChange={(e) => setSelectedChannel(e.target.value)}
 					/>
 				</ListItem>
-				<ListItem disableGutters>
-					<TextField
-						label="Channel Amount (Sats)"
-						style={{ width: "100%" } }
-						value={channel_amount_sats}
-						onChange={(e) =>
-							setChannelAmountSats(Number(e.target.value))
-						}
-					/>
-				</ListItem>
-				<ListItemText>Announce Channel</ListItemText>
-				<ListItemIcon>
-					<Checkbox
-						checked={announce_channel}
-						onChange={() => setAnnounceChannel(!announce_channel)}
-					/>
-				</ListItemIcon>
 				<ListItem disableGutters>
 					<Button
 						style={buttonStyle}
 						variant="contained"
-						onClick={open_channel}
+						onClick={close_channel}
 					>
 						Send
 					</Button>
@@ -162,4 +140,4 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 	);
 }
 
-export default OpenChannelDialog;
+export default CloseChannelDialog;

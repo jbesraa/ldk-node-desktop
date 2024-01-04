@@ -35,29 +35,30 @@ function DashboardScreenCard({
 function DashboardScreen() {
     const [channelsCount, setChannelsCount] = useState(0);
     const [totalOnChainBalance, setTotalOnChainBalance] = useState(0);
-    const [currentBlockHeight, setCurrentBlockHeight] = useState(0);
-    const { get_total_onchain_balance, list_channels } = useNodeContext();
-    const { currentBlock } = useBitcoinContext();
+    const [LDKBalance, setLDKBalance] = useState(0);
+    const {
+        get_total_onchain_balance,
+        list_channels,
+        currentBlockHeight,
+    } = useNodeContext();
 
     useEffect(() => {
-            async function init() {
-                const balance = await get_total_onchain_balance();
-                const channels = await list_channels();
-                const blockHeight = await currentBlock();
-                setChannelsCount(channels?.length)
-                setCurrentBlockHeight(blockHeight)
-                setTotalOnChainBalance(balance)
-            }
-            init()
-
-            }, [get_total_onchain_balance, list_channels, currentBlock])
+        async function init() {
+            const balance = await get_total_onchain_balance();
+            const channels = await list_channels();
+            const ldk_balance =  channels.reduce((acc, channel) => {
+                return acc + channel.balance_msat;
+            }, 0);
+            setLDKBalance(ldk_balance);
+            setChannelsCount(channels?.length);
+            setTotalOnChainBalance(balance);
+        }
+        init();
+    }, [get_total_onchain_balance, list_channels]);
 
     return (
         <>
-            <TitleCard 
-                title={"Dashboard"}
-                value={"Hello Nakamoto"}
-            />
+            <TitleCard title={"Dashboard"} value={"Hello Nakamoto"} />
             <div
                 style={{
                     display: "grid",
@@ -75,15 +76,11 @@ function DashboardScreen() {
                 />
                 <DashboardScreenCard
                     title={"LDK Balance"}
-                    value={"?"}
+                    value={LDKBalance}
                 />
                 <DashboardScreenCard
-                    title={"Open LDK Channels"}
+                    title={"Open Channels"}
                     value={channelsCount}
-                />
-                <DashboardScreenCard
-                    title={"Fees Earned 24h"}
-                    value={"?"}
                 />
             </div>
         </>

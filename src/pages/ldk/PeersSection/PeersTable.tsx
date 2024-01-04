@@ -22,6 +22,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { writeText } from "@tauri-apps/api/clipboard";
 import { useNodeContext } from "../../../state/NodeContext";
 import { ConnectToPeerInput, PeerDetails } from "../../../types";
+import { info } from "tauri-plugin-log-api";
 
 interface Data {
 	node_id: string;
@@ -221,6 +222,7 @@ export default function PeersTable() {
 			let peers = await list_peers();
 			const new_rows: TablePeerDetails[] = peers.map(
 				(row: PeerDetails) => {
+					info(`row: ${JSON.stringify(row)}`);
 					return {
 						node_id: row.node_id,
 						is_connected: row.is_connected ? "Yes" : "No",
@@ -338,8 +340,8 @@ export default function PeersTable() {
 	};
 
 	return (
-		<Box sx={{ width: "100%", paddingTop: 2 }}>
-			<Paper sx={{ width: "100%", mb: 2 }}>
+		<Box sx={{ width: "100%" }}>
+			<Paper sx={{ width: "100%" }}>
 				<EnhancedTableToolbar
 					disconnectSelectedNodes={disconnectSelectedNodes}
 					connectToSelectedNodes={connectToSelectedNodes}
@@ -349,7 +351,7 @@ export default function PeersTable() {
 					<Table
 						sx={{ minWidth: 750 }}
 						aria-labelledby="tableTitle"
-						size={"medium"}
+						size={"small"}
 					>
 						<EnhancedTableHead
 							numSelected={selected.length}
@@ -398,15 +400,7 @@ export default function PeersTable() {
 												variant="subtitle1"
 												color="text.secondary"
 											>
-												{row.node_id.slice(0, 10) +
-													"..." +
-													row.node_id.slice(-10)}{" "}
-												<span
-													style={{ cursor: "pointer" }}
-													onClick={() => writeText(row.node_id)}
-												>
-													<ContentCopyIcon />
-												</span>
+											{row.node_id}
 											</Typography>
 										</TableCell>
 										<TableCell align="left">

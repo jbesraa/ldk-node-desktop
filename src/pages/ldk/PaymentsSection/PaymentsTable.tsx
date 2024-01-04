@@ -264,14 +264,14 @@ export default function PaymentsTable() {
 	);
 
 	return (
-		<Box sx={{ width: "100%", paddingTop: 2 }}>
-			<Paper sx={{ width: "100%", mb: 2 }}>
+		<Box sx={{ width: "100%" }}>
+			<Paper sx={{ width: "100%" }}>
 				<EnhancedTableToolbar numSelected={selected.length} />
 				<TableContainer>
 					<Table
 						sx={{ minWidth: 750 }}
 						aria-labelledby="tableTitle"
-						size={"medium"}
+						size={"small"}
 					>
 						<EnhancedTableHead
 							numSelected={selected.length}

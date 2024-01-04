@@ -135,39 +135,42 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 		onRequestSort,
 	} = props;
 	const createSortHandler =
-		(property: keyof Data) => (event: React.MouseEvent<unknown>) => {
+		(property: keyof Data) =>
+		(event: React.MouseEvent<unknown>) => {
 			onRequestSort(event, property);
 		};
 
 	return (
 		<TableHead>
 			<TableRow>
-				<TableCell padding="checkbox">
-					<Checkbox
-						color="primary"
-						indeterminate={numSelected > 0 && numSelected < rowCount}
-						checked={rowCount > 0 && numSelected === rowCount}
-						onChange={onSelectAllClick}
-						inputProps={{
-							"aria-label": "select all desserts",
-						}}
-					/>
-				</TableCell>
 				{headCells.map((headCell) => (
 					<TableCell
 						key={headCell.id}
-						align={"left"}
-						padding={headCell.disablePadding ? "none" : "normal"}
-						sortDirection={orderBy === headCell.id ? order : false}
+						align={"center"}
+						padding={
+							headCell.disablePadding
+								? "none"
+								: "normal"
+						}
+						sortDirection={
+							orderBy === headCell.id ? order : false
+						}
 					>
 						<TableSortLabel
 							active={orderBy === headCell.id}
-							direction={orderBy === headCell.id ? order : "asc"}
+							direction={
+								orderBy === headCell.id
+									? order
+									: "asc"
+							}
 							onClick={createSortHandler(headCell.id)}
 						>
 							{headCell.label}
 							{orderBy === headCell.id ? (
-								<Box component="span" sx={visuallyHidden}>
+								<Box
+									component="span"
+									sx={visuallyHidden}
+								>
 									{order === "desc"
 										? "sorted descending"
 										: "sorted ascending"}
@@ -231,8 +234,11 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 }
 
 export default function ChannelsTable() {
-	const { list_channels, is_node_running, convert_to_current_unit } =
-		useNodeContext();
+	const {
+		list_channels,
+		is_node_running,
+		convert_to_current_unit,
+	} = useNodeContext();
 	const [rows, setRows] = React.useState<ChannelDetails[]>([]);
 
 	React.useEffect(() => {
@@ -264,40 +270,6 @@ export default function ChannelsTable() {
 		setOrderBy(property);
 	};
 
-	const handleSelectAllClick = (
-		event: React.ChangeEvent<HTMLInputElement>
-	) => {
-		if (event.target.checked) {
-			const newSelected = rows.map((n) => n.channel_id);
-			setSelected(newSelected);
-			return;
-		}
-		setSelected([]);
-	};
-
-	const handleClick = (
-		_event: React.MouseEvent<unknown>,
-		name: string
-	) => {
-		const selectedIndex = selected.indexOf(name);
-		let newSelected: readonly string[] = [];
-
-		if (selectedIndex === -1) {
-			newSelected = newSelected.concat(selected, name);
-		} else if (selectedIndex === 0) {
-			newSelected = newSelected.concat(selected.slice(1));
-		} else if (selectedIndex === selected.length - 1) {
-			newSelected = newSelected.concat(selected.slice(0, -1));
-		} else if (selectedIndex > 0) {
-			newSelected = newSelected.concat(
-				selected.slice(0, selectedIndex),
-				selected.slice(selectedIndex + 1)
-			);
-		}
-
-		setSelected(newSelected);
-	};
-
 	const handleChangePage = (_event: unknown, newPage: number) => {
 		setPage(newPage);
 	};
@@ -309,7 +281,8 @@ export default function ChannelsTable() {
 		setPage(0);
 	};
 
-	const isSelected = (name: string) => selected.indexOf(name) !== -1;
+	const isSelected = (name: string) =>
+		selected.indexOf(name) !== -1;
 
 	// Avoid a layout jump when reaching the last page with empty rows.
 	const emptyRows =
@@ -327,67 +300,42 @@ export default function ChannelsTable() {
 	);
 
 	return (
-		<Box sx={{ width: "100%", paddingTop: 2 }}>
-			<Paper sx={{ width: "100%", mb: 2 }}>
+		<Box sx={{ width: "100%" }}>
+			<Paper sx={{ width: "100%" }}>
 				<EnhancedTableToolbar numSelected={selected.length} />
 				<TableContainer>
 					<Table
-						sx={{ minWidth: 750 }}
+						sx={{ minWidth: 750, overflow: "scroll" }}
 						aria-labelledby="tableTitle"
-						size={"medium"}
+						size={"small"}
 					>
 						<EnhancedTableHead
 							numSelected={selected.length}
 							order={order}
 							orderBy={orderBy}
-							onSelectAllClick={handleSelectAllClick}
+							onSelectAllClick={(_event) => {}}
 							onRequestSort={handleRequestSort}
 							rowCount={rows.length}
 						/>
 						<TableBody>
 							{visibleRows.map((row, index) => {
-								const isItemSelected = isSelected(
-									String(row.channel_id)
-								);
 								const labelId = `enhanced-table-checkbox-${index}`;
 
 								return (
 									<TableRow
-										hover
-										onClick={(event) =>
-											handleClick(event, String(row.channel_id))
-										}
+										hover={false}
+										onClick={(_event) => {}}
 										role="checkbox"
-										aria-checked={isItemSelected}
+										aria-checked={false}
 										tabIndex={-1}
 										key={String(row.channel_id)}
-										selected={isItemSelected}
+										selected={false}
 										sx={{
-											cursor: "pointer",
+											cursor: "default",
 										}}
 									>
-										<TableCell padding="checkbox">
-											<Checkbox
-												color="primary"
-												checked={isItemSelected}
-												inputProps={{
-													"aria-labelledby": labelId,
-												}}
-											/>
-										</TableCell>
-										<TableCell
-											component="th"
-											id={labelId}
-											scope="row"
-											padding="none"
-										>
-											{row.channel_id.slice(0, 5)}..{row.channel_id.slice(-5)}
-											<span
-												style={{ cursor: "pointer" }}
-												onClick={() => writeText(row.channel_id)}
-											>
-												<ContentCopyIcon />
-											</span>
+										<TableCell align="left">
+											{row.channel_id}
 										</TableCell>
 										<TableCell align="left">
 											{convert_to_current_unit(
@@ -399,7 +347,9 @@ export default function ChannelsTable() {
 											{row.confirmations}
 										</TableCell>
 										<TableCell align="left">
-											{row.is_channel_ready ? "Yes" : "No"}
+											{row.is_channel_ready
+												? "Yes"
+												: "No"}
 										</TableCell>
 										<TableCell align="left">
 											{convert_to_current_unit(
@@ -408,16 +358,22 @@ export default function ChannelsTable() {
 											)}
 										</TableCell>
 										<TableCell align="left">
-											{row.is_usable ? "Yes" : "No"}
+											{row.is_usable
+												? "Yes"
+												: "No"}
 										</TableCell>
 										<TableCell align="left">
-											{row.is_outbound ? "Yes" : "No"}
+											{row.is_outbound
+												? "Yes"
+												: "No"}
 										</TableCell>
 										<TableCell align="left">
-											{row.is_public ? "Yes" : "No"}
+											{row.is_public
+												? "Yes"
+												: "No"}
 										</TableCell>
 										<TableCell align="left">
-											{row.counterparty_node_id.slice(0, 8)}
+											{row.counterparty_node_id}
 										</TableCell>
 										<TableCell align="left">
 											{convert_to_current_unit(

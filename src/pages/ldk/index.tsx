@@ -4,7 +4,8 @@ import ChannelsSection from "./ChannelsSection";
 import OurNodeSection from "./OurNodeSection";
 import PaymentsSection from "./PaymentsSection";
 import PeersSection from "./PeersSection";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNodeContext } from "../../state/NodeContext";
 
 export const TabsBar = ({ value, handleChange }: any) => {
     return (
@@ -40,46 +41,55 @@ export const TabsBar = ({ value, handleChange }: any) => {
 };
 
 const TabPanel = (props: any) => {
-	const {children, value, index, ...other} = props;
+    const { children, value, index, ...other } = props;
 
-	return (
-		<div
-			role="tabpanel"
-			hidden={value !== index}
-			id={ `full-width-tabpanel-${index}` }
-			aria-labelledby={ `full-width-tab-${index}` }
-			{ ...other }
-		>
-			{value === index && (
-				<Box p={3}>
-					<Typography>{children}</Typography>
-				</Box>
-			)}
-		</div>
-	);
-}
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`full-width-tabpanel-${index}`}
+            aria-labelledby={`full-width-tab-${index}`}
+            {...other}
+        >
+            {value === index && (
+                <Box p={3}>
+                    <Typography>{children}</Typography>
+                </Box>
+            )}
+        </div>
+    );
+};
 
 function LDKScreen() {
     const [selectedTab, setSelectedTab] = useState(0);
+    const { is_node_running } = useNodeContext();
+    const [isNodeRunning, setIsNodeRunning] = useState(false);
+
+    // useEffect(() => {
+    //     const timer = setInterval(async () => {
+    //         let res = await is_node_running();
+    //         setIsNodeRunning(res);
+    //     }, 1000);
+    //     return () => clearInterval(timer);
+    // }, []);
 
     return (
         <>
-            <TitleCard title={"LDK Node"} value={"Offline"} />
+            <TitleCard title={"LDK Node"} value={isNodeRunning ? "Online": "Offline"} />
             <OurNodeSection />
             <TabsBar
                 value={selectedTab}
                 handleChange={(v: any) => setSelectedTab(v)}
             />
-		<TabPanel value={selectedTab} index={0}>
-            <PeersSection />
+            <TabPanel value={selectedTab} index={0}>
+                <PeersSection />
             </TabPanel>
-		<TabPanel value={selectedTab} index={1}>
-            <ChannelsSection />
+            <TabPanel value={selectedTab} index={1}>
+                <ChannelsSection />
             </TabPanel>
-		<TabPanel value={selectedTab} index={2}>
-            <PaymentsSection />
+            <TabPanel value={selectedTab} index={2}>
+                <PaymentsSection />
             </TabPanel>
-
         </>
     );
 }

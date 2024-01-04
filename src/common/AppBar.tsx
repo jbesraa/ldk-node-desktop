@@ -9,19 +9,22 @@ import { Button } from "@mui/material";
 import { useNodeContext } from "../state/NodeContext";
 import DialogWindow from "./Dialog";
 import StartNodeDialog from "../pages/ldk/OurNodeSection/Actions/StartNode";
-import { useBitcoinContext } from "../state/BitcoinContext";
 
 const buttonStyle = {
     color: "white",
     width: "100%",
-    fontWeight: "600",
+    fontSize: "0.6em",
     backgroundColor: "#344e41",
 };
 
 export default function MenuAppBar() {
-    const { start_node, is_node_running, get_network, bitcoinUnit } =
-        useNodeContext();
-    const { connectToEsplora, currentBlock } = useBitcoinContext();
+    const {
+        start_node,
+        is_node_running,
+        get_network,
+        currentBlockHeight,
+        bitcoinUnit,
+    } = useNodeContext();
     const [boltColor, setBoltColor] = useState<string>("success");
     const [isNodeRunning, setIsNodeRunning] = useState(false);
     const [network, setNetwork] = useState("");
@@ -34,13 +37,13 @@ export default function MenuAppBar() {
         run();
     }, [isNodeRunning]);
 
-    useEffect(() => {
-        const timer = setInterval(async () => {
-            let res = await is_node_running();
-            setIsNodeRunning(res);
-        }, 3000);
-        return () => clearInterval(timer);
-    }, []);
+    // useEffect(() => {
+    //     const timer = setInterval(async () => {
+    //         let res = await is_node_running();
+    //         setIsNodeRunning(res);
+    //     }, 3000);
+    //     return () => clearInterval(timer);
+    // }, []);
 
     return (
         <Box sx={{ flexGrow: 1 }}>
@@ -71,7 +74,7 @@ export default function MenuAppBar() {
                         color="#344e41"
                         sx={{ flexGrow: 1 }}
                     >
-                        0shi 
+                        0shi
                     </Typography>
                     <div>
                         <IconButton
@@ -142,7 +145,7 @@ export default function MenuAppBar() {
                                 variant="contained"
                                 disabled={true}
                             >
-                                Block: 252494
+                                {`Block: ${currentBlockHeight}`}
                             </Button>
                         </IconButton>
                     </div>

@@ -15,22 +15,25 @@ function OurNodeData() {
 	} = useNodeContext();
 	const [nodeId, setNodeId] = useState("");
 	const [listeningAddress, setListeningAddress] = useState("");
+	const [onChainAddress, setOnChainAddress] = useState("");
 	const [isNodeRunning, setIsNodeRunning] = useState(false);
 
-	useEffect(() => {
-		const timer = setInterval(async () => {
-			let res = await is_node_running();
-			setIsNodeRunning(res);
-		}, 10000);
-		return () => clearInterval(timer);
-	}, []);
+	// useEffect(() => {
+	// 	const timer = setInterval(async () => {
+	// 		let res = await is_node_running();
+	// 		setIsNodeRunning(res);
+	// 	}, 3000);
+	// 	return () => clearInterval(timer);
+	// }, []);
 
 	useEffect(() => {
 		const init = async () => {
 			if(!isNodeRunning) return;
 			let node_id = await get_node_id();
 			let ourListeningAddress = await get_our_address();
+			let chainAddress = await new_onchain_address();
 			setNodeId(node_id);
+			setOnChainAddress(chainAddress)
 			setListeningAddress(ourListeningAddress);
 		};
 
@@ -46,14 +49,20 @@ function OurNodeData() {
 		>
 			<CardContent>
 				<Typography variant="subtitle1" color="white" >
-					Node ID: {nodeId.slice(0, 10) + "..." + nodeId.slice(-10)}{" "}
+					Node ID: {` ${nodeId} `}
 					<span style={{ cursor: "pointer" }}onClick={() => writeText(nodeId)}>
 						<ContentCopyIcon />
 					</span>
 				</Typography>
 				<Typography variant="subtitle1" color="white" >
-					Address: {listeningAddress}
+					Network Address: {` ${listeningAddress} `}
 					<span style={{ cursor: "pointer" }}onClick={() => writeText(listeningAddress)}>
+						<ContentCopyIcon />
+					</span>
+				</Typography>
+				<Typography variant="subtitle1" color="white" >
+					On-Chain Address: {` ${onChainAddress} `}
+					<span style={{ cursor: "pointer" }}onClick={() => writeText(onChainAddress)}>
 						<ContentCopyIcon />
 					</span>
 				</Typography>
