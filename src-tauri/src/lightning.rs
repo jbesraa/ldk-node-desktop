@@ -2,12 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use ldk_node::bitcoin::secp256k1::PublicKey;
-use ldk_node::bitcoin::OutPoint;
+use ldk_node::bitcoin::{Network, OutPoint};
 use ldk_node::io::sqlite_store::SqliteStore;
 use ldk_node::lightning::ln::msgs::SocketAddress;
 use ldk_node::lightning::ln::ChannelId;
 use ldk_node::lightning_invoice::{Bolt11Invoice, SignedRawBolt11Invoice};
-use ldk_node::Network;
 use ldk_node::{
     Builder, ChannelDetails, LogLevel, Node, PaymentDetails, PaymentDirection, PaymentStatus,
     PeerDetails,
@@ -17,7 +16,6 @@ use ldk_node::{
 use std::str::FromStr;
 use std::sync::{Mutex, OnceLock};
 use std::thread;
-use tauri_plugin_log::LogTarget;
 
 #[tauri::command]
 pub fn get_node_id() -> String {
