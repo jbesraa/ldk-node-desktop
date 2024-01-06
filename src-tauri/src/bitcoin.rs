@@ -19,7 +19,12 @@ pub struct BitcoinWallet {
 }
 
 impl BitcoinWallet {
-    pub fn new(network: Network, seed_bytes: &[u8], storage_dir_path: &str) -> Self {
+    pub fn new(network: Network) -> (Self, Mnemonic) {
+        let mnemonic = Self::generate_mnemonic().unwrap();
+        let wallet = Self::internal_new(network, &mnemonic.to_seed(""), "/tmp/ldk-desktop");
+        (wallet, mnemonic)
+    }
+    pub fn internal_new(network: Network, seed_bytes: &[u8], storage_dir_path: &str) -> Self {
         let xprv = ExtendedPrivKey::new_master(network.into(), &seed_bytes).unwrap();
         let wallet_name = bdk::wallet::wallet_name_from_descriptor(
             Bip84(xprv, bdk::KeychainKind::External),
@@ -92,6 +97,12 @@ impl BitcoinWallet {
     }
 }
 
+#[tauri::command]
+pub fn create_wallet() -> Result<String, ()> {
+    let (_, mnemonic) = BitcoinWallet::new(Network::Testnet);
+    Ok(mnemonic.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -104,6 +115,6 @@ mod tests {
         let wallet_1_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
         let wallet_1_mnemonic: Mnemonic = Mnemonic::parse_normalized(wallet_1_mnemonic).unwrap();
         let storage_dir_path = "/tmp/ldk-desktop";
-        BitcoinWallet::new(network, &wallet_1_mnemonic.to_seed(""), storage_dir_path);
+        // BitcoinWallet::new(network, &wallet_1_mnemonic.to_seed(""), storage_dir_path);
     }
 }

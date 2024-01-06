@@ -30,6 +30,7 @@ fn main() {
             lightning::is_node_running,
             lightning::sync_wallet,
             lightning::list_payments,
+            bitcoin::create_wallet,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

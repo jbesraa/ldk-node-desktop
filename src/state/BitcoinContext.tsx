@@ -1,12 +1,9 @@
-import axios from "axios";
+import { invoke } from "@tauri-apps/api/tauri";
 import { createContext, useContext, useState } from "react";
-import { trace, info, error } from "tauri-plugin-log-api";
 
 export interface BitcoinActions {
-    connectToEsplora: (s: string) => Promise<boolean>;
-    currentBlock: () => Promise<number>;
-    esploraUrl: string;
     connection: BitcoinConnection;
+    create_wallet: () => Promise<string>;
 }
 
 export const useBitcoinContext = () => useContext(BitcoinContext);
@@ -23,53 +20,23 @@ export const BitcoinContextProvider = ({
 }: {
     children: any;
 }) => {
-    const [connection, setConnection] = useState<BitcoinConnection>(
+    const [connection, _setConnection] = useState<BitcoinConnection>(
         BitcoinConnection.Offline
     );
-    const [esploraUrl, setEsploraUrl] = useState<string>("");
 
-    async function currentBlock(): Promise<number> {
+    async function create_wallet(): Promise<string> {
         try {
-            const block = `${esploraUrl}/blocks/tip/height`;
-            const response = await axios.get(block);
-            if (response.status < 300 && response.status > 199) {
-                console.log(response.data);
-                return Number(response.data);
-            }
-            return 1;
-        } catch (err) {
-            console.log(err);
-            return 2;
-        }
-    }
-
-    async function connectToEsplora(
-        esploraUrl: string
-    ): Promise<boolean> {
-        try {
-            const head = `${esploraUrl}/blocks/tip/height`;
-            info(`Esplora URL: ${head}`);
-            const response = await axios.get(head);
-            info(`Esplora Response status: ${response.status}`);
-            info(`Esplora Response data: ${response.data}`);
-            if (response.status < 300 && response.status > 199) {
-                setEsploraUrl(esploraUrl);
-                setConnection(BitcoinConnection.Online);
-                return true;
-            }
-            return false;
-        } catch (err) {
-            error(`Esplora Error: ${err}`);
-            console.log(err);
-            return false;
+            const res: string = await invoke("create_wallet", {});
+            return res;
+        } catch (e) {
+            console.log("Error get_our_address", e);
+            return "";
         }
     }
 
     const state: BitcoinActions = {
-        connectToEsplora,
-        currentBlock,
-        esploraUrl,
         connection,
+        create_wallet,
     };
 
     return (
