@@ -1,4 +1,7 @@
 #![allow(dead_code)]
+use std::io::Write;
+use std::str::FromStr;
+
 use bdk::bitcoin::psbt::PartiallySignedTransaction;
 use bdk::bitcoin::{Address, Amount};
 // use bdk::bitcoincore_rpc::RpcApi;
@@ -75,7 +78,7 @@ impl BitcoinWallet {
         }
     }
 
-    pub async fn get_new_address(&self) -> AddressInfo {
+    pub fn get_new_address(&self) -> AddressInfo {
         let address = self.wallet.get_address(AddressIndex::New).unwrap();
         address
     }
@@ -85,7 +88,7 @@ impl BitcoinWallet {
         balance.get_spendable()
     }
 
-    pub async fn build_tx(
+    pub fn build_tx(
         &self,
         address: Address,
         amount: Amount,
@@ -117,6 +120,28 @@ impl BitcoinWallet {
 pub fn create_wallet() -> Result<String, ()> {
     let (_, mnemonic) = BitcoinWallet::new(Network::Testnet);
     Ok(mnemonic.to_string())
+}
+
+#[tauri::command]
+pub fn get_new_address(wallet_path: &str) -> Result<String, ()> {
+    let wallet = BitcoinWallet::load(wallet_path);
+    Ok(wallet.get_new_address().to_string())
+}
+
+#[tauri::command]
+pub fn create_transaction(
+    wallet_path: String,
+    address: String,
+    amount: u64,
+) -> Result<(PartiallySignedTransaction, TransactionDetails), ()> {
+    let wallet = BitcoinWallet::load(&wallet_path);
+    let tx = wallet.build_tx(
+        bdk::bitcoin::Address::from_str(&address)
+            .unwrap()
+            .assume_checked(),
+        bdk::bitcoin::Amount::from_btc(amount as f64).unwrap(),
+    );
+    Ok(tx)
 }
 
 #[cfg(test)]
