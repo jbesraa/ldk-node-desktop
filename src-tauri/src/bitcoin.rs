@@ -13,6 +13,8 @@ use bdk::{
 use bdk::{SignOptions, TransactionDetails};
 use bip39::Mnemonic;
 
+const WALLET_KEYS_SEED_LEN: usize = 64;
+
 pub struct BitcoinWallet {
     wallet: bdk::Wallet<SqliteDatabase>,
     blockchain: RpcBlockchain,
@@ -24,7 +26,16 @@ impl BitcoinWallet {
         let wallet = Self::internal_new(network, &mnemonic.to_seed(""), "/tmp/ldk-desktop");
         (wallet, mnemonic)
     }
-    pub fn internal_new(network: Network, seed_bytes: &[u8], storage_dir_path: &str) -> Self {
+    pub fn load(keys_seed_path: &str) -> Self {
+        let seed = std::fs::read(keys_seed_path).unwrap();
+        let mut key = [0; WALLET_KEYS_SEED_LEN];
+        key.copy_from_slice(&seed);
+        let network = Network::Testnet;
+        let wallet = Self::internal_new(network, &key, "/tmp/ldk-desktop");
+        wallet
+    }
+
+    fn internal_new(network: Network, seed_bytes: &[u8], storage_dir_path: &str) -> Self {
         let xprv = ExtendedPrivKey::new_master(network.into(), &seed_bytes).unwrap();
         let wallet_name = bdk::wallet::wallet_name_from_descriptor(
             Bip84(xprv, bdk::KeychainKind::External),
@@ -53,6 +64,11 @@ impl BitcoinWallet {
             sync_params: None,
         };
         let blockchain = RpcBlockchain::from_config(&config).unwrap();
+        let wallet_user_selected_name = "wallet 1".replace(" ", "_");
+        let mut f = std::fs::File::create(wallet_user_selected_name).unwrap();
+        f.write_all(&seed_bytes).unwrap();
+        f.sync_all().unwrap();
+
         Self {
             wallet: bdk_wallet,
             blockchain,
