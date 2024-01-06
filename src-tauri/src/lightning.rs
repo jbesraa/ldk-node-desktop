@@ -39,7 +39,6 @@ pub fn start_node(
         listening_address,
         esplora_address,
     };
-    dbg!(&conf);
     let node = init_instance(Some(conf)).expect("Failed to initialize node");
     match node.start() {
         Ok(_) => {

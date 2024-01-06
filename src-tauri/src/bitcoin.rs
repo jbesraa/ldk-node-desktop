@@ -1,10 +1,16 @@
+#![allow(dead_code)]
+use bdk::bitcoin::psbt::PartiallySignedTransaction;
+use bdk::bitcoin::{Address, Amount};
+// use bdk::bitcoincore_rpc::RpcApi;
+use bdk::blockchain::Blockchain;
 use bdk::blockchain::{rpc::Auth, ConfigurableBlockchain, RpcBlockchain, RpcConfig};
-use bdk::wallet::{AddressInfo, AddressIndex};
+use bdk::wallet::{AddressIndex, AddressInfo};
 use bdk::{
     bitcoin::{bip32::ExtendedPrivKey, secp256k1::Secp256k1, Network},
     database::SqliteDatabase,
     template::Bip84,
 };
+use bdk::{SignOptions, TransactionDetails};
 pub struct BitcoinWallet {
     wallet: bdk::Wallet<SqliteDatabase>,
     blockchain: RpcBlockchain,
@@ -35,7 +41,7 @@ impl BitcoinWallet {
         let config = RpcConfig {
             url: url.to_string(),
             auth: Auth::Cookie { file: path_buf },
-            network: bdk::bitcoin::Network::Testnet,
+            network,
             wallet_name,
             sync_params: None,
         };
@@ -46,10 +52,37 @@ impl BitcoinWallet {
         }
     }
 
-	pub async fn get_new_address(&self) -> AddressInfo {
-		let address = self.wallet.get_address(AddressIndex::New).unwrap();
-		address
-	}
+    pub async fn get_new_address(&self) -> AddressInfo {
+        let address = self.wallet.get_address(AddressIndex::New).unwrap();
+        address
+    }
+
+    pub async fn get_spendable_balance(&self) -> u64 {
+        let balance = self.wallet.get_balance().unwrap();
+        balance.get_spendable()
+    }
+
+    pub async fn build_tx(
+        &self,
+        address: Address,
+        amount: Amount,
+    ) -> (PartiallySignedTransaction, TransactionDetails) {
+        let mut tx_builder = self.wallet.build_tx();
+        tx_builder.add_recipient(address.script_pubkey(), amount.to_btc().to_bits());
+        let (psbt, details) = tx_builder.finish().unwrap();
+        (psbt, details)
+    }
+
+    pub async fn sign_tx(&self, psbt: PartiallySignedTransaction) -> PartiallySignedTransaction {
+        let mut psbt = psbt.clone();
+        self.wallet.sign(&mut psbt, SignOptions::default()).unwrap();
+        psbt
+    }
+
+    pub async fn broadcast_tx(&self, psbt: PartiallySignedTransaction) -> Result<(), bdk::Error> {
+        let tx = psbt.extract_tx();
+        self.blockchain.broadcast(&tx)
+    }
 }
 
 #[cfg(test)]
