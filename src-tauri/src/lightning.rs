@@ -1,6 +1,3 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 use ldk_node::bitcoin::secp256k1::PublicKey;
 use ldk_node::bitcoin::{Network, OutPoint};
 use ldk_node::io::sqlite_store::SqliteStore;
@@ -11,8 +8,6 @@ use ldk_node::{
     Builder, ChannelDetails, LogLevel, Node, PaymentDetails, PaymentDirection, PaymentStatus,
     PeerDetails,
 };
-// use std::fs::File;
-// use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 use std::sync::{Mutex, OnceLock};
 use std::thread;
