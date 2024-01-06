@@ -11,6 +11,8 @@ use bdk::{
     template::Bip84,
 };
 use bdk::{SignOptions, TransactionDetails};
+use bip39::Mnemonic;
+
 pub struct BitcoinWallet {
     wallet: bdk::Wallet<SqliteDatabase>,
     blockchain: RpcBlockchain,
@@ -83,6 +85,11 @@ impl BitcoinWallet {
         let tx = psbt.extract_tx();
         self.blockchain.broadcast(&tx)
     }
+
+    pub fn generate_mnemonic() -> Result<Mnemonic, bip39::Error> {
+        let m = Mnemonic::generate(12)?;
+        Ok(m)
+    }
 }
 
 #[cfg(test)]
@@ -94,10 +101,9 @@ mod tests {
     #[test]
     fn test_new() {
         let network = Network::Testnet;
-        let mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-        let mnemonic: Mnemonic = Mnemonic::parse_normalized(mnemonic).unwrap();
+        let wallet_1_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+        let wallet_1_mnemonic: Mnemonic = Mnemonic::parse_normalized(wallet_1_mnemonic).unwrap();
         let storage_dir_path = "/tmp/ldk-desktop";
-        BitcoinWallet::new(network, &mnemonic.to_seed(""), storage_dir_path);
-        assert!(false);
+        BitcoinWallet::new(network, &wallet_1_mnemonic.to_seed(""), storage_dir_path);
     }
 }
