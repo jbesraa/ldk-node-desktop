@@ -1,7 +1,8 @@
-import { Card, CardContent, Typography } from "@mui/material";
+import { Button, Card, CardContent, Typography } from "@mui/material";
 import { useNodeContext } from "../../state/NodeContext";
 import { TitleCard } from "../../common";
 import { createContext, useEffect, useState } from "react";
+import { useBitcoinContext } from "../../state/BitcoinContext";
 
 // function TitleCard({
 //     title,
@@ -109,20 +110,21 @@ const BitcoinRpcProvider = ({ children }: any) => {
     const getCurrentHeight = async () => {
         const height = await bitcoinRpc?.getBlockCount();
         return height;
-    }
+    };
 
     const state = {
         getCurrentHeight,
-    }
+    };
 
     return (
         <BitcoinRpcContext.Provider value={state}>
             {children}
         </BitcoinRpcContext.Provider>
     );
-}
+};
 
 function BitcoinScreen() {
+    const bitcoinContext = useBitcoinContext();
     const { bitcoinUnit } = useNodeContext();
 
     return (
@@ -135,8 +137,17 @@ function BitcoinScreen() {
                     gridGap: "1em",
                 }}
             >
-                {/** <BitcoinScreenCard title={"Balance"} value={`21 ${bitcoinUnit}`} /> **/}
                 <BitcoinScreenCard title={"Sync"} value={"0%"} />
+                <h3>Wallets</h3>
+                <Button
+                    onClick={async (_e: any) => {
+                        let res =
+                            await bitcoinContext.create_wallet();
+                        console.log(res);
+                    }}
+                >
+                    Create Wallet
+                </Button>
             </div>
         </>
     );

@@ -14,12 +14,7 @@ import {
 	StartNodeInput,
 } from "../types";
 import { useBitcoinContext } from "./BitcoinContext";
-import {
-	trace,
-	info,
-	error,
-	attachConsole,
-} from "tauri-plugin-log-api";
+import { info, error } from "tauri-plugin-log-api";
 
 export interface NodeActions {
 	get_logs: () => Promise<string[]>;

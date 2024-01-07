@@ -27,11 +27,6 @@ function HomeScreen() {
 	//     init();
 	// }, [get_total_onchain_balance, list_channels]);
 
-	const wallets: any[] = [];
-	const WalletCard = ({ wallet }: { wallet: any }) => {
-		return <div>wallet</div>;
-	};
-
 	return (
 		<>
 			<TitleCard title={"Dashboard"} value={"Hello Nakamoto"} />
@@ -42,13 +37,6 @@ function HomeScreen() {
 					gridGap: "1em",
 				}}
 			>
-				<h3>Wallets</h3>
-				<div>
-					{wallets.map((wallet) => (
-						<WalletCard wallet={wallet} />
-					))}
-				</div>
-				<Button>Create Wallet</Button>
 			</div>
 		</>
 	);
