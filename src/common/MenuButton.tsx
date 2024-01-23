@@ -21,10 +21,17 @@ import {
 	PayInvoiceDialog,
 	CloseChannelDialog,
 } from "../pages/ldk/OurNodeSection/Actions";
-import OurNodeActions from "../pages/ldk/OurNodeSection/OurNodeActions";
 import { DialogWindow } from ".";
+import ReceiveDialog from "../pages/bitcoin/ReceiveDialog";
+import StopNodeDialog from "../pages/bitcoin/StopNodeDialog";
 
-export default function MenuButton() {
+interface MenuButtonProps {
+	walletName: string;
+	isLoading: boolean;
+}
+
+export default function MenuButton(props: MenuButtonProps) {
+	const { walletName } = props;
 	const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(
 		null
 	);
@@ -44,23 +51,24 @@ export default function MenuButton() {
 					textAlign: "center",
 				}}
 			>
-				{/**<Typography sx={{ minWidth: 100 }}>Contact</Typography>
-        <Typography sx={{ minWidth: 100 }}>Profile</Typography>**/}
-				<Tooltip title="Account settings">
-					<IconButton
-						onClick={handleClick}
-						size="large"
-						sx={{ ml: 2 }}
-						aria-controls={open ? "account-menu" : undefined}
-						aria-haspopup="true"
-						aria-expanded={open ? "true" : undefined}
-					>
-						<BoltRounded
-							color="warning"
-							sx={{ width: 62, height: 62 }}
-						/>
-					</IconButton>
-				</Tooltip>
+				<IconButton
+					disabled={props.isLoading}
+					onClick={handleClick}
+					size="large"
+					title="Actions"
+					sx={{ ml: 2 }}
+					aria-controls={open ? "account-menu" : undefined}
+					aria-haspopup="true"
+					aria-expanded={open ? "true" : undefined}
+				>
+					<BoltRounded
+						color="success"
+						sx={{
+							width: 62,
+							height: 62,
+						}}
+					/>
+				</IconButton>
 			</Box>
 			<Menu
 				anchorEl={anchorEl}
@@ -104,52 +112,57 @@ export default function MenuButton() {
 			>
 				<MenuItem>
 					<PersonAdd />
-					<span style={{ paddingLeft: "1em" }}>
+					<span
+						style={{
+							paddingLeft: "1em",
+						}}
+					>
 						<DialogWindow
+							extraProps={{ walletName }}
 							buttonTitle="Connect To Peer"
 							DialogView={ConnectToPeerDialog}
 						/>
 					</span>
 				</MenuItem>
 				<MenuItem>
-					<PersonRemove />
-					<span style={{ paddingLeft: "1em" }}>Disconnect Peer</span>
-				</MenuItem>
-				<Divider />
-				<MenuItem>
 					<AddLink />
-					<span style={{ paddingLeft: "1em" }}>
+					<span
+						style={{
+							paddingLeft: "1em",
+						}}
+					>
 						<DialogWindow
+							extraProps={{ walletName }}
 							buttonTitle="Open Channel"
 							DialogView={OpenChannelDialog}
 						/>
 					</span>
 				</MenuItem>
 				<MenuItem>
-					<LinkOff />
-					<span style={{ paddingLeft: "1em" }}>
+					<AddLink />
+					<span
+						style={{
+							paddingLeft: "1em",
+						}}
+					>
 						<DialogWindow
-							buttonTitle="Close Channel"
-							DialogView={CloseChannelDialog}
-						/>
-					</span>
-				</MenuItem>
-				<Divider />
-				<MenuItem>
-					<AddBox />
-					<span style={{ paddingLeft: "1em" }}>
-						<DialogWindow
-							buttonTitle="Create Invoice"
-							DialogView={CreateInvoiceDialog}
+							extraProps={{ walletName }}
+							buttonTitle="Receive Payment"
+							DialogView={ReceiveDialog}
 						/>
 					</span>
 				</MenuItem>
 				<MenuItem>
-					<Payment />
-					<span style={{ paddingLeft: "1em" }}>
+					<AddLink />
+					<span
+						style={{
+							paddingLeft: "1em",
+						}}
+					>
 						<DialogWindow
-							buttonTitle="Pay Invoice"
-							DialogView={PayInvoiceDialog}
+							extraProps={{ walletName }}
+							buttonTitle="Stop Node"
+							DialogView={StopNodeDialog}
 						/>
 					</span>
 				</MenuItem>
@@ -157,3 +170,55 @@ export default function MenuButton() {
 		</React.Fragment>
 	);
 }
+
+// <MenuItem>
+// 	<PersonRemove />
+// 	<span
+// 		style={{
+// 			paddingLeft: "1em",
+// 		}}
+// 	>
+// 		Disconnect Peer
+// 	</span>
+// </MenuItem>
+// <Divider />
+// <MenuItem>
+// 	<LinkOff />
+// 	<span
+// 		style={{
+// 			paddingLeft: "1em",
+// 		}}
+// 	>
+// 		<DialogWindow
+// 			buttonTitle="Close Channel"
+// 			DialogView={CloseChannelDialog}
+// 		/>
+// 	</span>
+// </MenuItem>
+// <Divider />
+// <MenuItem>
+// 	<AddBox />
+// 	<span
+// 		style={{
+// 			paddingLeft: "1em",
+// 		}}
+// 	>
+// 		<DialogWindow
+// 			buttonTitle="Create Invoice"
+// 			DialogView={CreateInvoiceDialog}
+// 		/>
+// 	</span>
+// </MenuItem>
+// <MenuItem>
+// 	<Payment />
+// 	<span
+// 		style={{
+// 			paddingLeft: "1em",
+// 		}}
+// 	>
+// 		<DialogWindow
+// 			buttonTitle="Pay Invoice"
+// 			DialogView={PayInvoiceDialog}
+// 		/>
+// 	</span>
+// </MenuItem>

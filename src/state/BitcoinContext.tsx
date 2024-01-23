@@ -1,12 +1,17 @@
-import axios from "axios";
-import { createContext, useContext, useState } from "react";
-import { trace, info, error } from "tauri-plugin-log-api";
+import { invoke } from "@tauri-apps/api/tauri";
+import {
+    createContext,
+    useContext,
+    useState,
+} from "react";
+import { CreateWalletInput } from "../types";
 
 export interface BitcoinActions {
-    connectToEsplora: (s: string) => Promise<boolean>;
-    currentBlock: () => Promise<number>;
-    esploraUrl: string;
     connection: BitcoinConnection;
+    create_wallet: (i: CreateWalletInput) => Promise<string>;
+    list_wallets: () => Promise<string[]>;
+    load_wallet: (n: string) => Promise<any>;
+    get_new_address: (n: string) => Promise<string>;
 }
 
 export const useBitcoinContext = () => useContext(BitcoinContext);
@@ -23,53 +28,65 @@ export const BitcoinContextProvider = ({
 }: {
     children: any;
 }) => {
-    const [connection, setConnection] = useState<BitcoinConnection>(
+    const [connection, _setConnection] = useState<BitcoinConnection>(
         BitcoinConnection.Offline
     );
-    const [esploraUrl, setEsploraUrl] = useState<string>("");
 
-    async function currentBlock(): Promise<number> {
+    async function create_wallet(
+        i: CreateWalletInput
+    ): Promise<string> {
         try {
-            const block = `${esploraUrl}/blocks/tip/height`;
-            const response = await axios.get(block);
-            if (response.status < 300 && response.status > 199) {
-                console.log(response.data);
-                return Number(response.data);
-            }
-            return 1;
-        } catch (err) {
-            console.log(err);
-            return 2;
+            const res: string = await invoke("create_wallet", {
+                ...i,
+            });
+            return res;
+        } catch (e) {
+            console.log("Error get_our_address", e);
+            return "";
         }
     }
 
-    async function connectToEsplora(
-        esploraUrl: string
-    ): Promise<boolean> {
+    async function list_wallets(): Promise<string[]> {
         try {
-            const head = `${esploraUrl}/blocks/tip/height`;
-            info(`Esplora URL: ${head}`);
-            const response = await axios.get(head);
-            info(`Esplora Response status: ${response.status}`);
-            info(`Esplora Response data: ${response.data}`);
-            if (response.status < 300 && response.status > 199) {
-                setEsploraUrl(esploraUrl);
-                setConnection(BitcoinConnection.Online);
-                return true;
-            }
-            return false;
-        } catch (err) {
-            error(`Esplora Error: ${err}`);
-            console.log(err);
-            return false;
+            const res: string[] = await invoke("list_wallets");
+            return res;
+        } catch (e) {
+            console.log("Error list wallets", e);
+            return [];
+        }
+    }
+
+    async function load_wallet(name: string): Promise<any> {
+        try {
+            const res = await invoke("load_wallet", {
+                name
+            });
+            console.log(res);
+            return res;
+        } catch (e) {
+            console.log("Error load wallet", e);
+            return [];
+        }
+    }
+
+    async function get_new_address(walletName: string): Promise<string> {
+        try {
+            const res: string = await invoke("get_new_address", {
+                walletName
+            });
+            return res;
+        } catch (e) {
+            console.log("Error get new address", e);
+            return "";
         }
     }
 
     const state: BitcoinActions = {
-        connectToEsplora,
-        currentBlock,
-        esploraUrl,
         connection,
+        create_wallet,
+        list_wallets,
+        load_wallet,
+        get_new_address
     };
 
     return (

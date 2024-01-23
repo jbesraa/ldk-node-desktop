@@ -1,145 +1,165 @@
-import { Card, CardContent, Typography } from "@mui/material";
-import { useNodeContext } from "../../state/NodeContext";
-import { TitleCard } from "../../common";
+import {
+	Button,
+	Card,
+	CardContent,
+	Divider,
+	Typography,
+} from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { DialogWindow, TitleCard } from "../../common";
 import { createContext, useEffect, useState } from "react";
-
-// function TitleCard({
-//     title,
-//     value,
-// }: {
-//     title: string;
-//     value: string | number;
-// }) {
-//     const CardStyle = {
-//         minWidth: 265,
-//         minHeight: "20vh",
-//         color: "#344e41",
-//         backgroundColor: "#dad7cd",
-//         marginBottom: "1em",
-//     };
-
-//     return (
-//         <Card sx={CardStyle}>
-//             <CardContent>
-//                 <div
-//                     style={{
-//                         display: "grid",
-//                         gridTemplateColumns: "1fr 1fr",
-//                     }}
-//                 >
-//                     <Typography variant="overline" color="gray">
-//                         {title}
-//                     </Typography>
-//                     <DropdownButton
-//                         options={[
-//                             {
-//                                 name: "0",
-//                                 val: "Connect to Lightning Peer",
-//                             },
-//                             {
-//                                 name: "0",
-//                                 val: "Open Lightning Channel",
-//                             },
-//                             {
-//                                 name: "0",
-//                                 val: "Close Lightning Channel",
-//                             },
-//                             { name: "0", val: "Show Lightning Logs" },
-//                             { name: "0", val: "Create Invoice" },
-//                             { name: "0", val: "Pay Invoice" },
-//                         ]}
-//                         label="Actions"
-//                         selectedValue=""
-//                         onChange={(e) => {
-//                             console.log(e);
-//                         }}
-//                     />
-//                     {/**<Button sx={{ justifySelf: "end" }}> Actions </Button>**/}
-//                 </div>
-//                 <Typography variant="h2" color="#344e41">
-//                     {value}
-//                 </Typography>
-//                     <TextField label="Enter Esplora URL" />
-//                     <Button style={{ height: "56px", marginLeft: "1em" }} variant="outlined">Set</Button>
-//             </CardContent>
-//         </Card>
-//     );
-// }
+import { useBitcoinContext } from "../../state/BitcoinContext";
+import CreateBitcoinWalletDialog from "./CreateWallet";
+import WalletView, { WalletData } from "./WalletView";
+import { useNodeContext } from "../../state/NodeContext";
+import { CreateWalletInput } from "../../types";
+import Stepper from "../../common/carousle";
+import CircleIcon from "@mui/icons-material/Circle";
 
 function BitcoinScreenCard({
-    title,
-    value,
+	title,
+	onClickHandler,
+	selected,
 }: {
-    title: string;
-    value: string | number;
+	title: string;
+	onClickHandler: any;
+	selected: boolean;
 }) {
-    const CardStyle = {
-        minWidth: 265,
-        minHeight: "20vh",
-        backgroundColor: "#344e41",
-    };
+	const [isNodeRunning, setIsNodeRunning] = useState(false);
+	const { is_node_running } = useNodeContext();
+	const [mouseOver, setMouseOver] = useState(false);
 
-    return (
-        <Card sx={CardStyle}>
-            <CardContent>
-                <Typography variant="overline" color="gray">
-                    {title}
-                </Typography>
-                <Typography variant="h2" color="white">
-                    {value}
-                </Typography>
-            </CardContent>
-        </Card>
-    );
+	useEffect(() => {
+		const timer = setInterval(async () => {
+			let res = await is_node_running(title);
+			setIsNodeRunning(res);
+		}, 10000);
+		return () => clearInterval(timer);
+	}, []);
+	useEffect(() => {
+		const handler = async () => {
+			let res = await is_node_running(title);
+			setIsNodeRunning(res);
+		};
+		handler();
+	}, []);
+
+	const CardStyle = {
+		minWidth: 225,
+		boxShadow: "none",
+		minHeight: "12vh",
+		backgroundColor:
+			selected || mouseOver ? "#344e41" : "inherit",
+		cursor: "pointer",
+	};
+
+	return (
+		<Card
+			onClick={() => {
+				onClickHandler();
+				setTimeout(() => {}, 3000);
+			}}
+			sx={CardStyle}
+			onMouseOver={() => setMouseOver(true)}
+			onMouseLeave={() => setMouseOver(false)}
+		>
+			<CardContent>
+				{isNodeRunning ? (
+					<CircleIcon color="success" />
+				) : (
+					<CircleIcon color="error" />
+				)}
+				<Typography
+					variant="h2"
+					style={{
+						textAlign: "center",
+						paddingTop: "0.5em",
+					}}
+					color={
+						selected || mouseOver ? "white" : "#344e41"
+					}
+				>
+					{title}
+				</Typography>
+			</CardContent>
+		</Card>
+	);
 }
 
-const BitcoinRpcContext = createContext({} as BitcoinRpcState);
-
-interface BitcoinRpcState {
-    getCurrentHeight: () => Promise<number>;
-}
-const BitcoinRpcProvider = ({ children }: any) => {
-    const [bitcoinRpc, setBitcoinRpc] = useState(null);
-
-    useEffect(() => {
-        const rpc = new BitcoinRpc();
-        setBitcoinRpc(rpc);
-    }, []);
-
-    const getCurrentHeight = async () => {
-        const height = await bitcoinRpc?.getBlockCount();
-        return height;
-    }
-
-    const state = {
-        getCurrentHeight,
-    }
-
-    return (
-        <BitcoinRpcContext.Provider value={state}>
-            {children}
-        </BitcoinRpcContext.Provider>
-    );
+interface BitcoinScreenProps {
+	selectedWallet: string;
+	onSelectWallet: (walletName: string) => void;
+	isLoading: boolean;
+	setIsLoading: (isLoading: boolean) => void;
 }
 
-function BitcoinScreen() {
-    const { bitcoinUnit } = useNodeContext();
+function BitcoinScreen(props: BitcoinScreenProps) {
+	const { onSelectWallet, selectedWallet } = props;
+	const [wallets, setWallets] = useState<string[]>([]);
+	const [refresh, setRefresh] = useState(false);
+	const { list_wallets } = useBitcoinContext();
+	const [activeWalletsStep, setActiveWalletsStep] = useState(0);
 
-    return (
-        <>
-            <TitleCard title="Bitcoin" value="Offline" />
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr 1fr",
-                    gridGap: "1em",
-                }}
-            >
-                {/** <BitcoinScreenCard title={"Balance"} value={`21 ${bitcoinUnit}`} /> **/}
-                <BitcoinScreenCard title={"Sync"} value={"0%"} />
-            </div>
-        </>
-    );
+	useEffect(() => {
+		const handler = async () => {
+			let wallets = await list_wallets();
+			setWallets(wallets);
+		};
+		handler();
+	}, [refresh]);
+
+	return (
+		<div style={{ padding: "1em" }}>
+			<TitleCard
+				title="Wallets"
+				refreshWallets={() => setRefresh(!refresh)}
+				value="Offline"
+			/>
+			{Math.ceil(wallets.length / 4) > 1 && (
+				<Stepper
+					steps={Math.ceil(wallets.length / 4)}
+					activeStep={activeWalletsStep}
+					setActiveStep={setActiveWalletsStep}
+				/>
+			)}
+			<div
+				style={{
+					display: "grid",
+					gridTemplateColumns: "1fr 1fr 1fr 1fr",
+					gridGap: "1em",
+				}}
+			>
+				{wallets
+					?.slice(
+						activeWalletsStep * 4,
+						wallets.length < activeWalletsStep * 4 + 4
+							? wallets.length
+							: activeWalletsStep * 4 + 4
+					)
+					.map((wallet) => {
+						return (
+							<div
+								key={wallet}
+								style={{
+									border: "1px solid #52796f",
+									borderRadius: "15px",
+								}}
+							>
+								<BitcoinScreenCard
+									title={wallet}
+									selected={
+										wallet == selectedWallet
+									}
+									onClickHandler={() =>
+										onSelectWallet(wallet)
+									}
+								/>
+							</div>
+						);
+					})}
+			</div>
+		</div>
+	);
 }
 
 export default BitcoinScreen;

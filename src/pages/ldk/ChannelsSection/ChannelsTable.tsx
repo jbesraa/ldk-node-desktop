@@ -233,7 +233,7 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 	);
 }
 
-export default function ChannelsTable() {
+export default function ChannelsTable({nodeName}: any) {
 	const {
 		list_channels,
 		is_node_running,
@@ -243,9 +243,10 @@ export default function ChannelsTable() {
 
 	React.useEffect(() => {
 		const init = async () => {
-			let isNodeRunning = await is_node_running();
+			let isNodeRunning = await is_node_running(nodeName);
 			if (!isNodeRunning) return;
-			let channels = await list_channels();
+			let channels = await list_channels(nodeName);
+			console.log("channels", channels)
 			setRows(channels);
 		};
 

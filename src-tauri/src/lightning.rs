@@ -1,66 +1,89 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 use ldk_node::bitcoin::secp256k1::PublicKey;
-use ldk_node::bitcoin::{Network, OutPoint};
+use ldk_node::bitcoin::OutPoint;
 use ldk_node::io::sqlite_store::SqliteStore;
 use ldk_node::lightning::ln::msgs::SocketAddress;
 use ldk_node::lightning::ln::ChannelId;
 use ldk_node::lightning_invoice::{Bolt11Invoice, SignedRawBolt11Invoice};
 use ldk_node::{
-    Builder, ChannelDetails, LogLevel, Node, PaymentDetails, PaymentDirection, PaymentStatus,
-    PeerDetails,
+    Builder, ChannelDetails, LogLevel, Network, Node, PaymentDetails, PaymentDirection,
+    PaymentStatus, PeerDetails,
 };
-// use std::fs::File;
-// use std::io::{BufRead, BufReader};
+use std::collections::HashMap;
 use std::str::FromStr;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, RwLock};
 use std::thread;
 
+use crate::paths::UserPaths;
+use crate::wallet::WalletConfig;
+
 #[tauri::command]
-pub fn get_node_id() -> String {
-    if !is_node_running() {
-        return "".to_string();
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+pub fn start_node(nodeName: String) -> bool {
+    let seed = match std::fs::read(UserPaths::new().seed_file(nodeName.clone())) {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let config_file = UserPaths::new().config_file(nodeName.clone());
+    let config_file = match std::fs::read(config_file) {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let config: WalletConfig = match serde_json::from_slice(&config_file) {
+        Ok(c) => c,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    init_lazy(Arc::new(NodeConf {
+        network: ldk_node::bitcoin::Network::Testnet,
+        seed,
+        storage_dir: UserPaths::new().ldk_data_dir(nodeName.clone()),
+        listening_address: config.get_listening_address(),
+        esplora_address: config.get_esplora_address(),
+    }))
+}
+
+#[tauri::command]
+pub fn get_node_id(node_name: String) -> String {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return "".to_string();
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return "".to_string();
+        }
+    };
     node.node_id().to_string()
 }
 
 #[tauri::command]
-pub fn start_node(
-    network: ldk_node::bitcoin::Network,
-    storage_dir: String,
-    listening_address: String,
-    esplora_address: String,
-) -> String {
-    let conf = NodeConf {
-        network,
-        storage_dir,
-        listening_address,
-        esplora_address,
-    };
-    dbg!(&conf);
-    let node = init_instance(Some(conf)).expect("Failed to initialize node");
-    match node.start() {
-        Ok(_) => {
-            dbg!("Node started");
-            thread::spawn(|| loop {
-                let event = node.wait_next_event();
-                println!("EVENT: {:?}", event);
-                node.event_handled();
-            });
-            return "true".to_string();
-        }
+pub fn stop_node(node_name: String) -> bool {
+    let node = match NODES.read() {
+        Ok(n) => n,
         Err(e) => {
             dbg!(&e);
-            return e.to_string();
+            return false;
         }
     };
-}
-
-#[tauri::command]
-pub fn stop_node() -> bool {
-    let node = init_instance(None).expect("Failed to initialize node");
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return false;
+        }
+    };
     match node.stop() {
         Ok(_) => {
             dbg!("Node stopped");
@@ -71,20 +94,41 @@ pub fn stop_node() -> bool {
 }
 
 #[tauri::command]
-pub fn is_node_running() -> bool {
-    match init_instance(None) {
-        Some(node) => node.is_running(),
-        None => false,
-    }
+pub fn is_node_running(node_name: String) -> bool {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return false;
+        }
+    };
+    node.is_running()
 }
 
 #[tauri::command]
-pub fn new_onchain_address() -> String {
+pub fn new_onchain_address(node_name: String) -> String {
     let empty_result = "".to_string();
-    if !is_node_running() {
-        return empty_result;
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return empty_result;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return empty_result;
+        }
+    };
     match node.new_onchain_address() {
         Ok(a) => a.to_string(),
         Err(e) => {
@@ -95,11 +139,21 @@ pub fn new_onchain_address() -> String {
 }
 
 #[tauri::command]
-pub fn close_channel(node_id: String, channel_id: [u8; 32]) -> bool {
-    if !is_node_running() {
-        return false;
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+pub fn close_channel(node_name: String, node_id: String, channel_id: [u8; 32]) -> bool {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return false;
+        }
+    };
     let pub_key = match PublicKey::from_str(&node_id) {
         Ok(key) => key,
         Err(e) => {
@@ -119,6 +173,7 @@ pub fn close_channel(node_id: String, channel_id: [u8; 32]) -> bool {
 
 #[tauri::command]
 pub fn open_channel(
+    node_name: String,
     node_id: String,
     net_address: String,
     channel_amount_sats: u64,
@@ -126,15 +181,25 @@ pub fn open_channel(
     announce_channel: bool,
 ) -> bool {
     let empty_result = false;
-    if !is_node_running() {
-        return empty_result;
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return empty_result;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return empty_result;
+        }
+    };
     let target_node_id = match PublicKey::from_str(&node_id) {
         Ok(key) => key,
         Err(e) => {
             dbg!(&e);
-            return false;
+            return empty_result;
         }
     };
 
@@ -255,11 +320,21 @@ impl From<PaymentDetails> for WrappedPaymentDetails {
 }
 
 #[tauri::command]
-pub fn list_payments() -> Vec<WrappedPaymentDetails> {
-    if !is_node_running() {
-        return vec![];
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+pub fn list_payments(node_name: String) -> Vec<WrappedPaymentDetails> {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return vec![];
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return vec![];
+        }
+    };
     node.list_payments()
         .into_iter()
         .map(|c: PaymentDetails| WrappedPaymentDetails::from(c))
@@ -267,11 +342,21 @@ pub fn list_payments() -> Vec<WrappedPaymentDetails> {
 }
 
 #[tauri::command]
-pub fn list_channels() -> Vec<ChanDetails> {
-    if !is_node_running() {
-        return vec![];
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+pub fn list_channels(node_name: String) -> Vec<ChanDetails> {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return vec![];
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return vec![];
+        }
+    };
     node.list_channels()
         .into_iter()
         .map(|c: ChannelDetails| ChanDetails::from(c))
@@ -279,20 +364,26 @@ pub fn list_channels() -> Vec<ChanDetails> {
 }
 
 #[tauri::command]
-pub fn sync_wallet() -> bool {
-    if !is_node_running() {
-        return false;
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
-    return node.sync_wallets().is_ok();
-}
-
-#[tauri::command]
-pub fn create_invoice(amount_msat: u64, description: &str, expiry_secs: u32) -> Option<String> {
-    if !is_node_running() {
-        return None;
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+pub fn create_invoice(
+    node_name: String,
+    amount_msat: u64,
+    description: &str,
+    expiry_secs: u32,
+) -> Option<String> {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return None;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return None;
+        }
+    };
     match node.receive_payment(amount_msat, description, expiry_secs) {
         Ok(i) => Some(i.into_signed_raw().to_string()),
         Err(e) => {
@@ -304,11 +395,21 @@ pub fn create_invoice(amount_msat: u64, description: &str, expiry_secs: u32) -> 
 
 /// returns payment hash if successful
 #[tauri::command]
-pub fn pay_invoice(invoice: String) -> Option<[u8; 32]> {
-    if !is_node_running() {
-        return None;
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+pub fn pay_invoice(node_name: String, invoice: String) -> Option<[u8; 32]> {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return None;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return None;
+        }
+    };
     let invoice = match SignedRawBolt11Invoice::from_str(&invoice) {
         Ok(i) => i,
         Err(e) => {
@@ -333,11 +434,21 @@ pub fn pay_invoice(invoice: String) -> Option<[u8; 32]> {
 }
 
 #[tauri::command]
-pub fn disconnect_peer(node_id: String) -> bool {
-    if !is_node_running() {
-        return false;
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+pub fn disconnect_peer(node_name: String, node_id: String) -> bool {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return false;
+        }
+    };
     let pub_key = match PublicKey::from_str(&node_id) {
         Ok(key) => key,
         Err(e) => {
@@ -355,12 +466,22 @@ pub fn disconnect_peer(node_id: String) -> bool {
 }
 
 #[tauri::command]
-pub fn connect_to_node(node_id: String, net_address: String) -> bool {
-    if !is_node_running() {
-        return false;
-    }
+pub fn connect_to_node(our_node_name: String, node_id: String, net_address: String) -> bool {
     let persist = true;
-    let node = init_instance(None).expect("Failed to initialize node");
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(our_node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return false;
+        }
+    };
     let pub_key = match PublicKey::from_str(&node_id) {
         Ok(key) => key,
         Err(e) => {
@@ -411,11 +532,21 @@ impl From<PeerDetails> for WrappedPeerDetails {
 }
 
 #[tauri::command]
-pub fn list_peers() -> Vec<WrappedPeerDetails> {
-    if !is_node_running() {
-        return vec![];
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+pub fn list_peers(node_name: String) -> Vec<WrappedPeerDetails> {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return vec![];
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return vec![];
+        }
+    };
     node.list_peers()
         .into_iter()
         .map(|peer: PeerDetails| peer.into())
@@ -423,11 +554,21 @@ pub fn list_peers() -> Vec<WrappedPeerDetails> {
 }
 
 #[tauri::command]
-pub fn spendable_on_chain() -> u64 {
-    if !is_node_running() {
-        return 0;
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+pub fn spendable_on_chain(node_name: String) -> u64 {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return 0;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return 0;
+        }
+    };
     match node.spendable_onchain_balance_sats() {
         Ok(b) => return b,
         Err(e) => {
@@ -438,13 +579,25 @@ pub fn spendable_on_chain() -> u64 {
 }
 
 #[tauri::command]
-pub fn total_onchain_balance() -> u64 {
-    if !is_node_running() {
-        return 0;
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
+pub fn total_onchain_balance(node_name: String) -> u64 {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return 0;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return 0;
+        }
+    };
     match node.total_onchain_balance_sats() {
-        Ok(b) => return b,
+        Ok(b) => {
+            return b;
+        }
         Err(e) => {
             dbg!(&e);
             return 0;
@@ -453,16 +606,39 @@ pub fn total_onchain_balance() -> u64 {
 }
 
 #[tauri::command]
-pub fn get_our_address() -> String {
-    let empty_result = "".to_string();
-    if !is_node_running() {
-        return empty_result;
-    }
-    let node = init_instance(None).expect("Failed to initialize node");
-    match node.listening_addresses() {
-        Some(b) => b.get(0).unwrap().to_string(),
-        None => empty_result,
-    }
+pub fn get_our_address(node_name: String) -> String {
+    let config_file = UserPaths::new().config_file(node_name);
+    let config_file = match std::fs::read(config_file) {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return "".to_string();
+        }
+    };
+    let config: WalletConfig = match serde_json::from_slice(&config_file) {
+        Ok(c) => c,
+        Err(_) => return "".to_string(),
+    };
+    return config.get_listening_address();
+}
+
+#[tauri::command]
+pub fn get_esplora_address(node_name: String) -> String {
+    let config_file = UserPaths::new().config_file(node_name);
+    dbg!(&config_file);
+    let config_file = match std::fs::read(config_file) {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return "".to_string();
+        }
+    };
+    let config: WalletConfig = match serde_json::from_slice(&config_file) {
+        Ok(c) => c,
+        Err(_) => return "".to_string(),
+    };
+    dbg!(&config);
+    return config.get_esplora_address();
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
@@ -470,78 +646,75 @@ pub struct NodeConf {
     pub network: ldk_node::bitcoin::Network,
     pub storage_dir: String,
     pub listening_address: String,
+    pub seed: Vec<u8>,
     pub esplora_address: String,
 }
 
-static IS_OUR_NODE_INIT: OnceLock<std::sync::Mutex<bool>> = OnceLock::new();
-static OUR_NODE: OnceLock<Node<SqliteStore>> = OnceLock::new();
+lazy_static! {
+    static ref NODES: RwLock<HashMap<String, Arc<Node<SqliteStore>>>> = RwLock::new(HashMap::new());
+}
 
-pub fn init_instance(init_config: Option<NodeConf>) -> Option<&'static Node<SqliteStore>> {
-    match OUR_NODE.get() {
-        Some(_) => return OUR_NODE.get(),
-        None => {
-            let config = match init_config {
-                Some(c) => c,
-                None => {
-                    dbg!("No config provided for initial node instance");
-                    return None;
-                }
-            };
-            dbg!(&config);
-            let initializing_mutex: &Mutex<bool> =
-                IS_OUR_NODE_INIT.get_or_init(|| std::sync::Mutex::new(false));
-            let mut initialized = initializing_mutex.lock().unwrap();
-            if !*initialized {
-                let mut builder = Builder::new();
-                builder.set_network(Network::Testnet);
-                builder.set_log_level(LogLevel::Error);
-                builder.set_log_level(LogLevel::Trace);
-                builder.set_log_dir_path(format!("{}/logs", &config.storage_dir));
-                builder.set_storage_dir_path(config.storage_dir);
-                builder
-                    .set_listening_addresses(vec![SocketAddress::from_str(
-                        &config.listening_address,
-                    )
-                    .unwrap()])
-                    .unwrap();
-                builder.set_esplora_server(config.esplora_address);
-                builder.set_gossip_source_rgs(
-                    "https://rapidsync.lightningdevkit.org/testnet/snapshot".to_string(),
-                );
-                let node = builder.build().unwrap();
-                if let Ok(_) = OUR_NODE.set(node) {
-                    *initialized = true;
-                };
-            }
-            drop(initialized);
-            OUR_NODE.get()
+pub fn init_lazy(config: Arc<NodeConf>) -> bool {
+    let storage_dir = config.storage_dir.clone();
+    let mut builder = Builder::new();
+    builder.set_network(Network::Testnet);
+    builder.set_log_level(LogLevel::Info);
+    builder.set_storage_dir_path(storage_dir.clone());
+    builder.set_log_dir_path(format!("{}/logs", &config.storage_dir));
+    let socket_address = match SocketAddress::from_str(&config.listening_address) {
+        Ok(s) => s,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let builder = match builder.set_listening_addresses(vec![socket_address]) {
+        Ok(b) => b,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    builder.set_esplora_server(config.esplora_address.clone());
+    builder.set_gossip_source_rgs(
+        "https://rapidsync.lightningdevkit.org/testnet/snapshot".to_string(),
+    );
+    let builder = match builder.set_entropy_seed_bytes(config.seed.clone()) {
+        Ok(b) => b,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let node = match builder.build() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let node = Arc::new(node);
+    let mut nodes = match NODES.write() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    nodes.insert(storage_dir.clone(), node.clone());
+    match node.clone().start() {
+        Ok(_) => {
+            dbg!("Node started");
+            thread::spawn(move || loop {
+                let event = node.clone().wait_next_event();
+                println!("EVENT: {:?}", event);
+                node.event_handled();
+            });
+            true
+        }
+        Err(e) => {
+            dbg!(&e);
+            false
         }
     }
 }
-
-// #[tauri::command]
-// fn get_logs() -> Vec<String> {
-//     let mut buffer = Vec::new();
-//     let node = init_instance(None).expect("Failed to initialize node");
-//     let storage_dir = node.
-//     let logs_dir = format!("{}/logs/ldk_node_latest.log", storage_dir);
-//     let file = match File::open(logs_dir) {
-//         Ok(f) => f,
-//         Err(e) => {
-//             dbg!(&e);
-//             return vec![];
-//         }
-//     };
-//     let reader = BufReader::new(file);
-//     for line in reader.lines() {
-//         let line = match line {
-//             Ok(l) => l,
-//             Err(e) => {
-//                 dbg!(&e);
-//                 continue;
-//             }
-//         };
-//         buffer.push(line);
-//     }
-//     buffer
-// }

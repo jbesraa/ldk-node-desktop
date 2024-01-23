@@ -1,14 +1,24 @@
 import styled from "styled-components";
-import { AppBar, SideBar } from "./common";
+import { AppBar } from "./common";
 import { NodeContextProvider } from "./state/NodeContext";
 import { Router, RouterContextProvider } from "./state/RouterContext";
-import { Paper } from "@mui/material";
 import { BitcoinContextProvider } from "./state/BitcoinContext";
 import { attachConsole } from "tauri-plugin-log-api";
 import { useEffect } from "react";
+import { createTheme, ThemeProvider  } from '@mui/material/styles';
+
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#344e41",
+        },
+        secondary: {
+            main: "#a3b18a",
+        },
+    },
+});
 
 function App() {
-
     // with LogTarget::Webview enabled this function will print logs to the browser console
     useEffect(() => {
         attachConsole();
@@ -18,35 +28,12 @@ function App() {
         <RouterContextProvider>
             <BitcoinContextProvider>
                 <NodeContextProvider>
+                <ThemeProvider theme={theme}>
                     <AppBar />
-                    <br />
-                    <br />
-                    <br />
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 7fr",
-                        }}
-                    >
-                        <Paper
-                            style={{
-                                width: 200,
-                                height: "90vh",
-                                backgroundColor: "transparent",
-                            }}
-                        >
-                                <SideBar />
-                        </Paper>
-                        <Wrapper>
-                            <div
-                                style={{
-                                    height: "100vh",
-                                }}
-                            >
-                                <Router />
-                            </div>
-                        </Wrapper>
-                    </div>
+                    <Wrapper>
+                        <Router />
+                    </Wrapper>
+                    </ThemeProvider>
                 </NodeContextProvider>
             </BitcoinContextProvider>
         </RouterContextProvider>
@@ -54,10 +41,8 @@ function App() {
 }
 
 const Wrapper = styled.div`
-    margin-left: 6em;
-    margin-right: 8em;
-    height: 90vh;
-    overflow: hidden;
+    margintop: 2em;
+    padding: 1em;
 `;
 
 export default App;

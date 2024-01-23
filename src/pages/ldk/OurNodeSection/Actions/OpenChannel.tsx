@@ -29,10 +29,11 @@ export interface SimpleDialogProps {
 	open: boolean;
 	selectedValue: string;
 	onClose: (value: string) => void;
+	walletName: string;
 }
 
 function OpenChannelDialog(props: SimpleDialogProps) {
-	const { onClose, selectedValue, open } = props;
+	const { onClose, selectedValue, open, walletName} = props;
 	const [message, setMessage] = useState("");
 	const [selectedPeerNodeId, setSelecterPeerNodeId] = useState("");
 	const [selectedChannel, setSelectedChannel] = useState("");
@@ -48,7 +49,7 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 	const [announce_channel, setAnnounceChannel] = useState(false);
 	useEffect(() => {
 		const run = async () => {
-			let res = await list_channels();
+			let res = await list_channels(walletName);
 			setChannelList(res);
 		};
 		run();
@@ -56,7 +57,7 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 
 	useEffect(() => {
 		const run = async () => {
-			let res = await list_peers();
+			let res = await list_peers(walletName);
 			setPeersList(res);
 		};
 		run();
@@ -65,6 +66,7 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 	async function open_channel() {
 		try {
 			let res: boolean = await invoke("open_channel", {
+				nodeName: walletName,
 				nodeId: selectedPeerNodeId,
 				netAddress: selectedPeerNetworkAddress,
 				channelAmountSats: channel_amount_sats,
