@@ -4,50 +4,14 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import BoltIcon from "@mui/icons-material/Bolt";
-import { useEffect, useState } from "react";
-import { Button } from "@mui/material";
-import { useNodeContext } from "../state/NodeContext";
-import DialogWindow from "./Dialog";
-import StartNodeDialog from "../pages/ldk/OurNodeSection/Actions/StartNode";
-
-const buttonStyle = {
-    color: "white",
-    width: "100%",
-    fontSize: "0.6em",
-    backgroundColor: "#344e41",
-};
+import { useState } from "react";
 
 export default function MenuAppBar() {
-    const {
-        start_node,
-        is_node_running,
-        get_network,
-        currentBlockHeight,
-        bitcoinUnit,
-    } = useNodeContext();
     const [boltColor, setBoltColor] = useState<string>("success");
-    const [isNodeRunning, setIsNodeRunning] = useState(false);
-    const [network, setNetwork] = useState("");
-
-    useEffect(() => {
-        const run = async () => {
-            let res = await get_network();
-            setNetwork(res);
-        };
-        run();
-    }, [isNodeRunning]);
-
-    // useEffect(() => {
-    //     const timer = setInterval(async () => {
-    //         let res = await is_node_running();
-    //         setIsNodeRunning(res);
-    //     }, 3000);
-    //     return () => clearInterval(timer);
-    // }, []);
 
     return (
-        <Box sx={{ flexGrow: 1 }}>
-            <AppBar color="transparent">
+        <Box sx={{ flexGrow: 1, boxShadow: "none" }}>
+            <AppBar color="transparent" sx={{ boxShadow: "none" }}>
                 <Toolbar>
                     <IconButton
                         size="large"
@@ -64,7 +28,7 @@ export default function MenuAppBar() {
                         sx={{ mr: 2 }}
                     >
                         <BoltIcon
-                            color={boltColor}
+                            color={"success"}
                             fontSize="large"
                         />
                     </IconButton>
@@ -76,112 +40,8 @@ export default function MenuAppBar() {
                     >
                         0shi
                     </Typography>
-                    <div>
-                        <IconButton
-                            size="large"
-                            onClick={(_e) => start_node}
-                            color="inherit"
-                            disabled={isNodeRunning}
-                        >
-                            <DialogWindow
-                                buttonTitle={
-                                    isNodeRunning
-                                        ? "On"
-                                        : "Start LDK Node"
-                                }
-                                style={
-                                    isNodeRunning
-                                        ? {
-                                              ...buttonStyle,
-                                              backgroundColor:
-                                                  "#dad7cd",
-                                          }
-                                        : buttonStyle
-                                }
-                                DialogView={StartNodeDialog}
-                            />
-                        </IconButton>
-                        <IconButton
-                            size="large"
-                            color="inherit"
-                            disabled={true}
-                        >
-                            <Button
-                                style={{
-                                    ...buttonStyle,
-                                    backgroundColor: "#344e41",
-                                }}
-                                variant="contained"
-                            >
-                                Network: {network}
-                            </Button>
-                        </IconButton>
-                        <IconButton
-                            color="inherit"
-                            size="large"
-                            disabled={true}
-                        >
-                            <Button
-                                style={{
-                                    ...buttonStyle,
-                                    backgroundColor: "#344e41",
-                                }}
-                                variant="contained"
-                                disabled={true}
-                            >
-                                Unit: {bitcoinUnit}
-                            </Button>
-                        </IconButton>
-                        <IconButton
-                            color="inherit"
-                            size="large"
-                            disabled={true}
-                        >
-                            <Button
-                                style={{
-                                    ...buttonStyle,
-                                    backgroundColor: "#344e41",
-                                }}
-                                variant="contained"
-                                disabled={true}
-                            >
-                                {`Block: ${currentBlockHeight}`}
-                            </Button>
-                        </IconButton>
-                    </div>
                 </Toolbar>
             </AppBar>
         </Box>
     );
 }
-
-// const MenuItems = () => {
-//     return (
-// 					<div>
-// 						<IconButton
-// 							size="large"
-// 							aria-label="account of current user"
-// 							aria-controls="menu-appbar"
-// 							disabled={!isNodeRunning}
-// 							aria-haspopup="true"
-// 							onClick={sync_wallet}
-// 							color="inherit"
-// 						>
-// 							<Button
-// 								style={
-// 									!isNodeRunning
-// 										? {
-// 												...buttonStyle,
-// 												backgroundColor: "#dad7cd",
-// 										  }
-// 										: buttonStyle
-// 								}
-// 								variant="outlined"
-// 							>
-// 								Sync Wallet
-// 							</Button>
-// 						</IconButton>
-// 					</div>
-
-//            )
-// }

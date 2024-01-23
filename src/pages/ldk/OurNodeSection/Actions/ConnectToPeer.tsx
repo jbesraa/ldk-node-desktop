@@ -20,20 +20,28 @@ export interface SimpleDialogProps {
 	open: boolean;
 	selectedValue: string;
 	onClose: (value: string) => void;
+	walletName: string
 }
 
 function ConnectToPeerDialog(props: SimpleDialogProps) {
-	const { onClose, selectedValue, open } = props;
-	const [peer_node_id, setPeerNode] = React.useState("0278812262d0fe8f7998f720c36b6a66f4b62fb6f73c91515f7c1f0e223f13bd48");
+	const { onClose, selectedValue, open, walletName } = props;
+	const [peer_node_id, setPeerNode] = React.useState("");
 	const [peer_net_address, setPeerNetAddress] = React.useState("0.0.0.0:9733");
 	const [message, setMessage] = React.useState("");
 	const [isSnackbarOpen, setIssnackbarOpen] = React.useState(false);
 
 	async function connect_to_peer() {
 		try {
+// our_node_name: String, node_id: String, net_address: String
 			const data = {
+				ourNodeName: walletName,
 				nodeId: peer_node_id,
 				netAddress: peer_net_address,
+			}
+			if (!data.ourNodeName || !data.nodeId || !data.netAddress) {
+				console.log("DATA IS MISSING")
+				console.log(data)
+				return;
 			}
 			console.log(data);
 			let res = await invoke("connect_to_node", {

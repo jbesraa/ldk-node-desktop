@@ -5,9 +5,9 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { Snackbar } from "../../../../common";
-import { useNodeContext } from "../../../../state/NodeContext";
-import { Network, StartNodeInput } from "../../../../types";
+import { useNodeContext } from "../../state/NodeContext";
+import { useState } from "react";
+import { Network, StartNodeInput } from "../../types";
 
 const buttonStyle = {
 	color: "#344e41",
@@ -26,21 +26,21 @@ export interface SimpleDialogProps {
 function StartNodeDialog(props: SimpleDialogProps) {
 	const { start_node } = useNodeContext();
 	const { onClose, selectedValue, open } = props;
-	const [network] = React.useState(Network.Testnet);
-	const [storageDir, setStorageDir] = React.useState(
+	const [network] = useState(Network.Testnet);
+	const [storageDir, setStorageDir] = useState(
 		"/home/ecode/.ldk-desktop-wallet"
 	);
 	const [listeningAddress, setListeningAddress] =
-		React.useState("0.0.0.0:9735");
-	const [esploraAddress, setEsploraAddress] = React.useState(
+		useState("0.0.0.0:9735");
+	const [esploraAddress, setEsploraAddress] = useState(
 		// "https://f0a4-2a06-c701-7781-1900-a5ea-b12c-183b-ebb2.ngrok-free.app"
 		"https://5b9c-46-116-218-230.ngrok-free.app"
 		// "https://6836-2a06-c701-7781-1900-bbb-fe28-1175-661e.ngrok-free.app"
 		// "http://127.0.0.1:3001"
 		// "https://blockstream.info/testnet/api/"
 	);
-	const [message, setMessage] = React.useState("");
-	const [isSnackbarOpen, setIssnackbarOpen] = React.useState(false);
+	const [message, setMessage] = useState("");
+	const [isSnackbarOpen, setIssnackbarOpen] = useState(false);
 
 	async function start() {
 		try {
@@ -142,3 +142,4 @@ function StartNodeDialog(props: SimpleDialogProps) {
 }
 
 export default StartNodeDialog;
+

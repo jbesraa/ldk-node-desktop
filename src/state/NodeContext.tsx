@@ -1,17 +1,12 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import {
-	createContext,
-	useContext,
-	useEffect,
-	useState,
-} from "react";
+import { createContext, useContext, useState } from "react";
 import {
 	ChannelDetails,
 	PeerDetails,
 	PaymentData,
 	ConnectToPeerInput,
 	BitcoinUnit,
-	StartNodeInput,
+	CreateWalletInput,
 } from "../types";
 import { useBitcoinContext } from "./BitcoinContext";
 import { info, error } from "tauri-plugin-log-api";
@@ -20,18 +15,19 @@ export interface NodeActions {
 	get_logs: () => Promise<string[]>;
 	sync_wallet: () => Promise<boolean>;
 	connect_to_peer: (i: ConnectToPeerInput) => Promise<boolean>;
-	start_node: (i: StartNodeInput) => Promise<boolean>;
-	stop_node: () => Promise<boolean>;
-	list_peers: () => Promise<PeerDetails[]>;
-	new_onchain_address: () => Promise<string>;
-	is_node_running: () => Promise<boolean>;
-	get_our_address: () => Promise<string>;
-	get_node_id: () => Promise<string>;
-	get_total_onchain_balance: () => Promise<number>;
-	get_network: () => Promise<string>;
-	list_channels: () => Promise<ChannelDetails[]>;
-	list_payments: () => Promise<PaymentData[]>;
-	disconnect_peer: (i: string) => Promise<boolean>;
+	start_node: (i: string) => Promise<boolean>;
+	stop_node: (nodeName: string) => Promise<boolean>;
+	list_peers: (nodeName: string) => Promise<PeerDetails[]>;
+	new_onchain_address: (nodeName: string) => Promise<string>;
+	is_node_running: (nodeName: string) => Promise<boolean>;
+	get_our_address: (nodeName: string) => Promise<string>;
+	get_esplora_address: (nodeName: string) => Promise<string>;
+	get_node_id: (nodeName: string) => Promise<string>;
+	get_total_onchain_balance: (nodeName: string) => Promise<number>;
+	get_network: (nodeName: string) => Promise<string>;
+	list_channels: (nodeName: string) => Promise<ChannelDetails[]>;
+	list_payments: (nodeName: string) => Promise<PaymentData[]>;
+	disconnect_peer: (nodeName: string, i: string) => Promise<boolean>;
 	update_bitcoin_unit: (i: BitcoinUnit) => void;
 	convert_to_current_unit: (
 		amount: number,
@@ -50,7 +46,6 @@ export const NodeContextProvider = ({
 }: {
 	children: any;
 }) => {
-	const { connectToEsplora } = useBitcoinContext();
 	const [bitcoinUnit, setBitcoinUnit] = useState(
 		BitcoinUnit.Satoshis
 	);
@@ -67,15 +62,11 @@ export const NodeContextProvider = ({
 		setBitcoinUnit(unit);
 	}
 
-	function convert_satoshis_to_milisatoshis(
-		amount: number
-	): number {
+	function convert_satoshis_to_milisatoshis(amount: number): number {
 		return amount * 1000;
 	}
 
-	function convert_milisatoshis_to_satoshis(
-		amount: number
-	): number {
+	function convert_milisatoshis_to_satoshis(amount: number): number {
 		return amount / 1000;
 	}
 
@@ -140,10 +131,7 @@ export const NodeContextProvider = ({
 
 	async function sync_wallet(): Promise<boolean> {
 		try {
-			const synced_wallet: boolean = await invoke(
-				"sync_wallet",
-				{}
-			);
+			const synced_wallet: boolean = await invoke("sync_wallet", {});
 			return synced_wallet;
 		} catch (e) {
 			console.log("Error syncing wallet", e);
@@ -157,6 +145,7 @@ export const NodeContextProvider = ({
 		try {
 			const { node_id, net_address } = i;
 			const res: boolean = await invoke("connect_to_node", {
+				nodeName: i.ourNodeName, // our nodename
 				nodeId: node_id,
 				netAddress: net_address,
 			});
@@ -167,9 +156,10 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function disconnect_peer(i: string): Promise<boolean> {
+	async function disconnect_peer(nodeName: string, i: string): Promise<boolean> {
 		try {
 			const res: boolean = await invoke("disconnect_peer", {
+			  nodeName,
 				nodeId: i,
 			});
 			return res;
@@ -179,21 +169,13 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function start_node(i: StartNodeInput): Promise<boolean> {
+	async function start_node(nodeName: string): Promise<boolean> {
 		try {
-			info(`Starting Node: ${JSON.stringify(i)}`);
-			const esploraResponse = await connectToEsplora(
-				i.esploraAddress
-			);
-			info(`Esplora Response: ${esploraResponse}`);
-			if (esploraResponse) {
-				const res: boolean = await invoke("start_node", {
-					...i,
-				});
-				info(`Start Node Response: ${res}`);
-				return res;
-			}
-			return false;
+			const res: boolean = await invoke("start_node", {
+				nodeName
+			});
+			info(`Start Node Response: ${res}`);
+			return res;
 		} catch (e) {
 			//@ts-ignore
 			error(e.toString());
@@ -203,9 +185,9 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function stop_node(): Promise<boolean> {
+	async function stop_node(nodeName: string): Promise<boolean> {
 		try {
-			const res: boolean = await invoke("stop_node", {});
+			const res: boolean = await invoke("stop_node", {nodeName});
 			return res;
 		} catch (e) {
 			console.log("Error Stopping node", e);
@@ -213,9 +195,10 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function list_peers(): Promise<PeerDetails[]> {
+	async function list_peers(nodeName: string): Promise<PeerDetails[]> {
 		try {
-			const res: PeerDetails[] = await invoke("list_peers", {});
+			const res: PeerDetails[] = await invoke("list_peers", {nodeName});
+			console.log("peeers", res);
 			return res;
 		} catch (e) {
 			console.log("Error Listing Peers ", e);
@@ -223,12 +206,10 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function new_onchain_address(): Promise<string> {
+	async function new_onchain_address(nodeName: string): Promise<string> {
 		try {
-			const res: string = await invoke(
-				"new_onchain_address",
-				{}
-			);
+			const res: string = await invoke("new_onchain_address", {nodeName});
+			console.log("HO", res);
 			return res;
 		} catch (e) {
 			console.log("Error new onchain address ", e);
@@ -236,9 +217,11 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function is_node_running(): Promise<boolean> {
+	async function is_node_running(nodeName: string): Promise<boolean> {
 		try {
-			const res: boolean = await invoke("is_node_running", {});
+			const res: boolean = await invoke("is_node_running", {
+				nodeName,
+			});
 			return res;
 		} catch (e) {
 			console.log("Error is_node_running", e);
@@ -246,9 +229,9 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function get_network(): Promise<string> {
+	async function get_network(nodeName: string): Promise<string> {
 		try {
-			const network: string = await invoke("get_network", {});
+			const network: string = await invoke("get_network", {nodeName});
 			return network;
 		} catch (e) {
 			console.log("Error get_network", e);
@@ -268,9 +251,9 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function get_node_id(): Promise<string> {
+	async function get_node_id(nodeName: string): Promise<string> {
 		try {
-			const res: string = await invoke("get_node_id", {});
+			const res: string = await invoke("get_node_id", { nodeName });
 			return res;
 		} catch (e) {
 			console.log("Error get_node_id", e);
@@ -278,12 +261,9 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function get_total_onchain_balance(): Promise<number> {
+	async function get_total_onchain_balance(nodeName: string): Promise<number> {
 		try {
-			const res: number = await invoke(
-				"total_onchain_balance",
-				{}
-			);
+			const res: number = await invoke("total_onchain_balance", {nodeName});
 			return res;
 		} catch (e) {
 			console.log("Error get_total_onchain_balance", e);
@@ -301,9 +281,10 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function get_our_address(): Promise<string> {
+	async function get_our_address(nodeName: string): Promise<string> {
 		try {
-			const res: string = await invoke("get_our_address", {});
+			if(!nodeName) return "";
+			const res: string = await invoke("get_our_address", {nodeName});
 			return res;
 		} catch (e) {
 			console.log("Error get_our_address", e);
@@ -311,12 +292,22 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function list_payments(): Promise<PaymentData[]> {
+	async function get_esplora_address(nodeName: string): Promise<string> {
 		try {
-			const res: PaymentData[] = await invoke(
-				"list_payments",
-				{}
-			);
+			console.log("here")
+			if(!nodeName) return "";
+			const res: string = await invoke("get_esplora_address", {nodeName});
+			console.log("here", res)
+			return res;
+		} catch (e) {
+			console.log("Error get_esplora_address", e);
+			return "";
+		}
+	}
+
+	async function list_payments(nodeName: string): Promise<PaymentData[]> {
+		try {
+			const res: PaymentData[] = await invoke("list_payments", {nodeName});
 			return res;
 		} catch (e) {
 			console.log("Error list_payments", e);
@@ -324,12 +315,9 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function list_channels(): Promise<ChannelDetails[]> {
+	async function list_channels(nodeName: string): Promise<ChannelDetails[]> {
 		try {
-			const res: ChannelDetails[] = await invoke(
-				"list_channels",
-				{}
-			);
+			const res: ChannelDetails[] = await invoke("list_channels", {nodeName});
 			return res;
 		} catch (e) {
 			console.log("Error list_channels", e);
@@ -355,6 +343,7 @@ export const NodeContextProvider = ({
 		update_bitcoin_unit,
 		convert_to_current_unit,
 		bitcoinUnit,
+		get_esplora_address,
 		get_logs,
 		currentBlockHeight,
 	};

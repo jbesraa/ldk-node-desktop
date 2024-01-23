@@ -18,10 +18,12 @@ import Tooltip from "@mui/material/Tooltip";
 import { visuallyHidden } from "@mui/utils";
 import LinkIcon from "@mui/icons-material/Link";
 import LinkOffIcon from "@mui/icons-material/LinkOff";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { writeText } from "@tauri-apps/api/clipboard";
 import { useNodeContext } from "../../../state/NodeContext";
-import { ConnectToPeerInput, PeerDetails } from "../../../types";
+import {
+	ConnectToPeerInput,
+	PeerDetails,
+	TablePeerDetails,
+} from "../../../types";
 import { info } from "tauri-plugin-log-api";
 
 interface Data {
@@ -198,46 +200,13 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 	);
 }
 
-interface TablePeerDetails {
-	node_id: string;
-	is_connected: string;
-	is_persisted: string;
-	address: string;
-	shared_channels: number;
+interface PeersTableProps {
+	rows: TablePeerDetails[];
 }
 
-export default function PeersTable() {
-	const {
-		list_peers,
-		is_node_running,
-		connect_to_peer,
-		disconnect_peer,
-	} = useNodeContext();
-	const [rows, setRows] = React.useState<TablePeerDetails[]>([]);
-
-	React.useEffect(() => {
-		const init = async () => {
-			let isNodeRunning = await is_node_running();
-			if (!isNodeRunning) return;
-			let peers = await list_peers();
-			const new_rows: TablePeerDetails[] = peers.map(
-				(row: PeerDetails) => {
-					info(`row: ${JSON.stringify(row)}`);
-					return {
-						node_id: row.node_id,
-						is_connected: row.is_connected ? "Yes" : "No",
-						is_persisted: row.is_persisted ? "Yes" : "No",
-						address: row.address,
-						shared_channels: 0,
-					};
-				}
-			);
-			setRows(new_rows);
-		};
-
-		init();
-	}, [list_peers]);
-
+export default function PeersTable(props: PeersTableProps) {
+	const { rows } = props;
+	const { connect_to_peer, disconnect_peer } = useNodeContext();
 	const [order, setOrder] = React.useState<Order>("asc");
 	const [orderBy, setOrderBy] = React.useState<keyof Data>("node_id");
 	const [selected, setSelected] = React.useState<readonly string[]>(
@@ -259,7 +228,7 @@ export default function PeersTable() {
 		event: React.ChangeEvent<HTMLInputElement>
 	) => {
 		if (event.target.checked) {
-			const newSelected = rows.map((n) => n.node_id);
+			const newSelected = rows?.map((n) => n.node_id);
 			setSelected(newSelected);
 			return;
 		}
@@ -305,48 +274,47 @@ export default function PeersTable() {
 	// Avoid a layout jump when reaching the last page with empty rows.
 	const emptyRows =
 		page > 0
-			? Math.max(0, (1 + page) * rowsPerPage - rows.length)
+			? Math.max(0, (1 + page) * rowsPerPage - rows?.length)
 			: 0;
 
 	const visibleRows = React.useMemo(
 		() =>
-			rows.slice(
+			rows?.slice(
 				page * rowsPerPage,
 				page * rowsPerPage + rowsPerPage
 			),
 		[order, orderBy, page, rowsPerPage, rows]
 	);
 
-	const connectToSelectedNodes = async () => {
-		const nodes: ConnectToPeerInput[] = [];
-		const selected_nodes = selected;
-		for (let i = 0; i < selected_nodes.length; i++) {
-			const nodeId = selected_nodes[i];
-			let net_address = rows.find(
-				(r) => (r.node_id = nodeId)
-			)?.address;
-			if (!net_address) continue;
-			else nodes.push({ node_id: nodeId, net_address: net_address });
-		}
-		await Promise.all(
-			nodes.map((n: ConnectToPeerInput) => connect_to_peer(n))
-		);
-	};
+	// const connectToSelectedNodes = async () => {
+	// 	const nodes: ConnectToPeerInput[] = [];
+	// 	const selected_nodes = selected;
+	// 	for (let i = 0; i < selected_nodes.length; i++) {
+	// 		const nodeId = selected_nodes[i];
+	// 		let net_address = rows.find(
+	// 			(r) => (r.node_id = nodeId)
+	// 		)?.address;
+	// 		if (!net_address) continue;
+	// 		else
+	// 			nodes.push({
+	// 				node_id: nodeId,
+	// 				net_address: net_address,
+	// 			});
+	// 	}
+	// 	await Promise.all(
+	// 		nodes.map((n: ConnectToPeerInput) => connect_to_peer(n))
+	// 	);
+	// };
 
-	const disconnectSelectedNodes = async () => {
-		await Promise.all(
-			selected.map((n: string) => disconnect_peer(n))
-		);
-	};
+	// const disconnectSelectedNodes = async () => {
+	// 	await Promise.all(
+	// 		selected.map((n: string) => disconnect_peer(n))
+	// 	);
+	// };
 
 	return (
 		<Box sx={{ width: "100%" }}>
 			<Paper sx={{ width: "100%" }}>
-				<EnhancedTableToolbar
-					disconnectSelectedNodes={disconnectSelectedNodes}
-					connectToSelectedNodes={connectToSelectedNodes}
-					numSelected={selected.length}
-				/>
 				<TableContainer>
 					<Table
 						sx={{ minWidth: 750 }}
@@ -359,7 +327,7 @@ export default function PeersTable() {
 							orderBy={orderBy}
 							onSelectAllClick={handleSelectAllClick}
 							onRequestSort={handleRequestSort}
-							rowCount={rows.length}
+							rowCount={rows?.length}
 						/>
 						<TableBody>
 							{visibleRows.map((row, index) => {
@@ -400,7 +368,7 @@ export default function PeersTable() {
 												variant="subtitle1"
 												color="text.secondary"
 											>
-											{row.node_id}
+												{row.node_id}
 											</Typography>
 										</TableCell>
 										<TableCell align="left">
@@ -428,7 +396,7 @@ export default function PeersTable() {
 				<TablePagination
 					rowsPerPageOptions={[5, 10, 25]}
 					component="div"
-					count={rows.length}
+					count={rows?.length}
 					rowsPerPage={rowsPerPage}
 					page={page}
 					onPageChange={handleChangePage}
@@ -438,3 +406,9 @@ export default function PeersTable() {
 		</Box>
 	);
 }
+
+// <EnhancedTableToolbar
+// 	disconnectSelectedNodes={disconnectSelectedNodes}
+// 	connectToSelectedNodes={connectToSelectedNodes}
+// 	numSelected={selected.length}
+// />

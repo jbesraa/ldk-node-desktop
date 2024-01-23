@@ -1,6 +1,5 @@
 import { Card, CardContent, Typography } from "@mui/material";
 import { TitleCard } from "../../common";
-import { useBitcoinContext } from "../../state/BitcoinContext";
 import { useNodeContext } from "../../state/NodeContext";
 import { useEffect, useState } from "react";
 
