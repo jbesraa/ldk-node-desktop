@@ -6,7 +6,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { Snackbar } from "../../../../common";
+import { Snackbar } from "../common";
 
 const buttonStyle = {
 	color: "#344e41",
@@ -20,49 +20,53 @@ export interface SimpleDialogProps {
 	open: boolean;
 	selectedValue: string;
 	onClose: (value: string) => void;
-	walletName: string
+	walletName: string;
 }
 
 function ConnectToPeerDialog(props: SimpleDialogProps) {
 	const { onClose, selectedValue, open, walletName } = props;
 	const [peer_node_id, setPeerNode] = React.useState("");
-	const [peer_net_address, setPeerNetAddress] = React.useState("0.0.0.0:9733");
+	const [peer_net_address, setPeerNetAddress] =
+		React.useState("0.0.0.0:9733");
 	const [message, setMessage] = React.useState("");
 	const [isSnackbarOpen, setIssnackbarOpen] = React.useState(false);
 
 	async function connect_to_peer() {
 		try {
-// our_node_name: String, node_id: String, net_address: String
 			const data = {
 				ourNodeName: walletName,
 				nodeId: peer_node_id,
 				netAddress: peer_net_address,
-			}
-			if (!data.ourNodeName || !data.nodeId || !data.netAddress) {
-				console.log("DATA IS MISSING")
-				console.log(data)
+			};
+			if (
+				!data.ourNodeName ||
+				!data.nodeId ||
+				!data.netAddress
+			) {
+				console.log("DATA IS MISSING");
+				console.log(data);
 				return;
 			}
 			console.log(data);
 			let res = await invoke("connect_to_node", {
-				...data
+				...data,
 			});
 			if (res) {
 				setMessage("Successfully connected to peer");
 			}
 			setMessage(String(res));
-			setIssnackbarOpen(true)
+			setIssnackbarOpen(true);
 			// handleClose();
 		} catch (e) {
 			console.log(e);
 			setMessage(String(e));
-			setIssnackbarOpen(true)
+			setIssnackbarOpen(true);
 		}
 	}
 
 	React.useEffect(() => {
-		return () => setIssnackbarOpen(false)
-	},[])
+		return () => setIssnackbarOpen(false);
+	}, []);
 
 	const title = "Connect To Peer";
 
@@ -77,7 +81,9 @@ function ConnectToPeerDialog(props: SimpleDialogProps) {
 			onClose={handleClose}
 			open={open}
 		>
-			<DialogTitle sx={{ textAlign: "center" }}>{title}</DialogTitle>
+			<DialogTitle sx={{ textAlign: "center" }}>
+				{title}
+			</DialogTitle>
 			<List sx={{ p: 6 }}>
 				<ListItem disableGutters>
 					<TextField
@@ -91,7 +97,9 @@ function ConnectToPeerDialog(props: SimpleDialogProps) {
 				<ListItem disableGutters>
 					<TextField
 						value={peer_net_address}
-						onChange={(e) => setPeerNetAddress(e.target.value)}
+						onChange={(e) =>
+							setPeerNetAddress(e.target.value)
+						}
 						style={{ width: "100%" }}
 						label="Peer Net Address"
 						variant="outlined"
@@ -105,7 +113,11 @@ function ConnectToPeerDialog(props: SimpleDialogProps) {
 					>
 						Connect
 					</Button>
-					<Snackbar message={message} open={isSnackbarOpen} setOpen={setIssnackbarOpen} />
+					<Snackbar
+						message={message}
+						open={isSnackbarOpen}
+						setOpen={setIssnackbarOpen}
+					/>
 				</ListItem>
 			</List>
 		</Dialog>

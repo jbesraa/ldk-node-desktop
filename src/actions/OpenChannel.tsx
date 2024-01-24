@@ -4,12 +4,17 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { Snackbar } from "../../../../common";
 import { useEffect, useState } from "react";
-import { useNodeContext } from "../../../../state/NodeContext";
-import { ChannelDetails, PeerDetails } from "../../../../types";
-import SelectComponent from "../../../../common/SelectInput";
 import { info } from "tauri-plugin-log-api";
+import {
+	Checkbox,
+	ListItemIcon,
+	ListItemText,
+	TextField,
+} from "@mui/material";
+import { useNodeContext } from "../state/NodeContext";
+import SelectComponent from "../common/SelectInput";
+import { Snackbar } from "../common";
 
 const buttonStyle = {
 	color: "#344e41",
@@ -23,10 +28,11 @@ export interface SimpleDialogProps {
 	open: boolean;
 	selectedValue: string;
 	onClose: (value: string) => void;
+	walletName: string;
 }
 
-function CloseChannelDialog(props: SimpleDialogProps) {
-	const { onClose, selectedValue, open } = props;
+function OpenChannelDialog(props: SimpleDialogProps) {
+	const { onClose, selectedValue, open, walletName} = props;
 	const [message, setMessage] = useState("");
 	const [selectedPeerNodeId, setSelecterPeerNodeId] = useState("");
 	const [selectedChannel, setSelectedChannel] = useState("");
@@ -34,12 +40,15 @@ function CloseChannelDialog(props: SimpleDialogProps) {
 	const [channelList, setChannelList] = useState<ChannelDetails[]>(
 		[]
 	);
+	const [channel_amount_sats, setChannelAmountSats] = useState(0);
 	const [isSnackbarOpen, setIssnackbarOpen] = useState(false);
 	const { list_channels, list_peers } = useNodeContext();
-
+	const [selectedPeerNetworkAddress, setSelectedPeerNetworkAddress] =
+		useState("");
+	const [announce_channel, setAnnounceChannel] = useState(false);
 	useEffect(() => {
 		const run = async () => {
-			let res = await list_channels();
+			let res = await list_channels(walletName);
 			setChannelList(res);
 		};
 		run();
@@ -47,38 +56,36 @@ function CloseChannelDialog(props: SimpleDialogProps) {
 
 	useEffect(() => {
 		const run = async () => {
-			let res = await list_peers();
+			let res = await list_peers(walletName);
 			setPeersList(res);
 		};
 		run();
 	}, [list_channels]);
 
-	async function close_channel() {
+	async function open_channel() {
 		try {
-			const data = {
+			let res: boolean = await invoke("open_channel", {
+				nodeName: walletName,
 				nodeId: selectedPeerNodeId,
-				channelId: Array.from(selectedChannel)
-			};
-			info(`data channel id: ${String(data.channelId)}`);
-			let res: boolean = await invoke("close_channel", {
-				...data,
+				netAddress: selectedPeerNetworkAddress,
+				channelAmountSats: channel_amount_sats,
+				pushToCounterpartyMsat: 0,
+				announceChannel: announce_channel,
 			});
-			info(`close_channel: ${String(res)}`);
 			if (res) {
-				setMessage("Successfully closed channel");
+				setMessage("Successfully opened channel");
 			}
-			setMessage("Failed to close channel");
+			setMessage("Failed to open channel");
 			setIssnackbarOpen(true);
 			handleClose();
 		} catch (e) {
+			info(`open_channel: ${String(e)}`)
 			console.log(e);
-			info(`close_channel error: ${String(e)}`);
-			setMessage("Failed to close channel");
+			setMessage("Failed to open channel");
 			setIssnackbarOpen(true);
 		}
 	}
-
-	const title = "Close Channel";
+	const title = "Open Channel";
 
 	const handleClose = () => {
 		onClose(selectedValue);
@@ -102,30 +109,46 @@ function CloseChannelDialog(props: SimpleDialogProps) {
 						}))}
 						selected={selectedPeerNodeId}
 						handleChange={(e) => {
-							setSelecterPeerNodeId(e.target.value);
+							const peer = peersList.find(
+								(p) => p.node_id == e.target.value
+							);
+							if (peer) {
+								setSelectedPeerNetworkAddress(peer.address);
+								setSelecterPeerNodeId(e.target.value);
+							}
 						}}
 					/>
 				</ListItem>
 				<ListItem disableGutters>
-					<SelectComponent
-						title={"Channels"}
-						items={channelList
-							.filter(
-								(c) => c.counterparty_node_id == selectedPeerNodeId
-							)
-							.map((c) => ({
-								value: c.channel_id,
-								title: c.channel_id,
-							}))}
-						selected={selectedChannel}
-						handleChange={(e) => setSelectedChannel(e.target.value)}
+					<TextField
+						disabled={true}
+						style={{ width: "100%" } }
+						label={"Peer Network Address"}
+						value={selectedPeerNetworkAddress}
 					/>
 				</ListItem>
+				<ListItem disableGutters>
+					<TextField
+						label="Channel Amount (Sats)"
+						style={{ width: "100%" } }
+						value={channel_amount_sats}
+						onChange={(e) =>
+							setChannelAmountSats(Number(e.target.value))
+						}
+					/>
+				</ListItem>
+				<ListItemText>Announce Channel</ListItemText>
+				<ListItemIcon>
+					<Checkbox
+						checked={announce_channel}
+						onChange={() => setAnnounceChannel(!announce_channel)}
+					/>
+				</ListItemIcon>
 				<ListItem disableGutters>
 					<Button
 						style={buttonStyle}
 						variant="contained"
-						onClick={close_channel}
+						onClick={open_channel}
 					>
 						Send
 					</Button>
@@ -140,4 +163,4 @@ function CloseChannelDialog(props: SimpleDialogProps) {
 	);
 }
 
-export default CloseChannelDialog;
+export default OpenChannelDialog;

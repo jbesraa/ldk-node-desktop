@@ -2,28 +2,13 @@ import * as React from "react";
 import Box from "@mui/material/Box";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import PersonAdd from "@mui/icons-material/PersonAdd";
-import {
-	AddBox,
-	AddLink,
-	BoltRounded,
-	LinkOff,
-	Payment,
-	PersonRemove,
-} from "@mui/icons-material";
-import {
-	CreateInvoiceDialog,
-	OpenChannelDialog,
-	ConnectToPeerDialog,
-	PayInvoiceDialog,
-	CloseChannelDialog,
-} from "../pages/ldk/OurNodeSection/Actions";
+import { AddLink, BoltRounded } from "@mui/icons-material";
+import { OpenChannelDialog, ConnectToPeerDialog } from "../actions";
 import { DialogWindow } from ".";
-import ReceiveDialog from "../pages/bitcoin/ReceiveDialog";
-import StopNodeDialog from "../pages/bitcoin/StopNodeDialog";
+import ReceiveDialog from "../pages/home/ReceiveDialog";
+import StopNodeDialog from "../pages/home/StopNodeDialog";
 
 interface MenuButtonProps {
 	walletName: string;
@@ -32,9 +17,8 @@ interface MenuButtonProps {
 
 export default function MenuButton(props: MenuButtonProps) {
 	const { walletName } = props;
-	const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(
-		null
-	);
+	const [anchorEl, setAnchorEl] =
+		React.useState<null | HTMLElement>(null);
 	const open = Boolean(anchorEl);
 	const handleClick = (event: React.MouseEvent<HTMLElement>) => {
 		setAnchorEl(event.currentTarget);
@@ -96,7 +80,8 @@ export default function MenuButton(props: MenuButtonProps) {
 							width: 10,
 							height: 10,
 							bgcolor: "background.paper",
-							transform: "translateY(-50%) rotate(45deg)",
+							transform:
+								"translateY(-50%) rotate(45deg)",
 							zIndex: 0,
 						},
 					},

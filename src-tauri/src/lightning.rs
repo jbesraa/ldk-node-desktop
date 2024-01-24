@@ -633,6 +633,7 @@ pub fn get_esplora_address(node_name: String) -> String {
             return "".to_string();
         }
     };
+
     let config: WalletConfig = match serde_json::from_slice(&config_file) {
         Ok(c) => c,
         Err(_) => return "".to_string(),

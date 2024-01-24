@@ -1,5 +1,4 @@
 import {
-	Button,
 	Card,
 	CardContent,
 	Divider,
@@ -8,8 +7,6 @@ import {
 	Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import UnfoldMoreDoubleIcon from "@mui/icons-material/UnfoldMoreDouble";
-import UnfoldLessDoubleIcon from "@mui/icons-material/UnfoldLessDouble";
 import { useNodeContext } from "../../state/NodeContext";
 import MenuButton from "../../common/MenuButton";
 import {
@@ -23,8 +20,9 @@ import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite
 import ConnectWithoutContactIcon from "@mui/icons-material/ConnectWithoutContact";
 import DataSaverOnIcon from "@mui/icons-material/DataSaverOn";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import PublicIcon from '@mui/icons-material/Public';
-import FlagIcon from '@mui/icons-material/Flag';
+import PublicIcon from "@mui/icons-material/Public";
+import FlagIcon from "@mui/icons-material/Flag";
+
 export interface Tx {
 	time: number;
 	txid: string;
@@ -34,22 +32,21 @@ export interface Tx {
 
 export interface WalletData {
 	name: string;
-	isLoading: boolean;
-	setIsLoading: (isLoading: boolean) => void;
 }
 
 interface SectionTitleProps {
 	title: string;
 	onClick: any;
-	isFold: boolean;
 	disabled?: boolean;
 }
+
 interface SectionTitleInfoProps {
 	nodeName: string;
 	isRunning: boolean;
 	isFold: boolean;
 	isLoading?: boolean;
 }
+
 const SectionTitleInfo = (props: SectionTitleInfoProps) => {
 	const { start_node } = useNodeContext();
 	const { nodeName, isLoading, isRunning } = props;
@@ -93,15 +90,13 @@ const SectionTitleInfo = (props: SectionTitleInfoProps) => {
 };
 
 const SectionTitle = (props: SectionTitleProps) => {
-	const { title, onClick, isFold } = props;
+	const { title, onClick } = props;
 	return (
 		<Card
 			style={{
 				backgroundColor: "inherit",
 				height: "4vh",
 				boxShadow: "none",
-				// paddingBottom: "1em",
-				// borderBottom: "1px dashed #52796f",
 				display: "grid",
 				gridTemplateColumns: "1fr 1fr",
 			}}
@@ -123,9 +118,8 @@ const SectionTitle = (props: SectionTitleProps) => {
 };
 
 function WalletView(props: WalletData) {
-	const { name, isLoading, setIsLoading } = props;
+	const { name } = props;
 	const nodeName = name;
-	console.log("nodeName", nodeName);
 	const {
 		get_node_id,
 		get_our_address,
@@ -150,19 +144,16 @@ function WalletView(props: WalletData) {
 
 	useEffect(() => {
 		const handler = async () => {
-			setIsLoading(true);
 			let ourListeningAddress = await get_our_address(nodeName);
 			let esploraAddress = await get_esplora_address(nodeName);
 			setListeningAddress(ourListeningAddress);
 			setEsploraAddress(esploraAddress);
-			setIsLoading(false);
 		};
 		handler();
 	}, [nodeName]);
 
 	useEffect(() => {
 		const handler = async () => {
-			setIsLoading(true);
 			let isRunning = await is_node_running(nodeName);
 			if (isRunning) {
 				let node_id = await get_node_id(nodeName);
@@ -197,12 +188,10 @@ function WalletView(props: WalletData) {
 				setTotalOnChainBalance(0);
 				setIsNodeRunning(false);
 			}
-			setIsLoading(false);
 		};
 		handler();
 		return () => {
 			setNodeId("");
-			setIsLoading(false);
 			setPeers([]);
 			setChannels([]);
 			setListeningAddress("");
@@ -224,11 +213,7 @@ function WalletView(props: WalletData) {
 					paddingBottom: "0em",
 				}}
 			>
-				<SectionTitle
-					title="Node Info"
-					onClick={() => {}}
-					isFold={true}
-				/>
+				<SectionTitle title="Node Info" onClick={() => {}} />
 			</div>
 			<div
 				style={{
@@ -487,7 +472,6 @@ function WalletView(props: WalletData) {
 					title="Peers"
 					disabled={true}
 					onClick={() => setShowPeersInfo(!showPeersInfo)}
-					isFold={showPeersInfo}
 				/>
 			</div>
 			<div
@@ -563,7 +547,7 @@ function WalletView(props: WalletData) {
 												gap: "1em",
 											}}
 										>
-											<Tooltip title="Peer is online">
+											<Tooltip title={ peer.is_connected ?  "Peer is online": "Peer is offline"}>
 												<ConnectWithoutContactIcon
 													color={
 														peer.is_connected ? "success" : "error"
@@ -611,7 +595,6 @@ function WalletView(props: WalletData) {
 					title="Channels"
 					disabled={true}
 					onClick={() => setShowChannelsInfo(!showChannelsInfo)}
-					isFold={showChannelsInfo}
 				/>
 			</div>
 			<div

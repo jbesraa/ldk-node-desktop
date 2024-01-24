@@ -6,7 +6,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { Snackbar } from "../../../../common";
+import { Snackbar } from "../common";
 
 const buttonStyle = {
 	color: "#344e41",
@@ -63,12 +63,16 @@ function CreateInvoiceDialog(props: SimpleDialogProps) {
 			onClose={handleClose}
 			open={open}
 		>
-			<DialogTitle sx={{ textAlign: "center" }}>{title}</DialogTitle>
+			<DialogTitle sx={{ textAlign: "center" }}>
+				{title}
+			</DialogTitle>
 			<List sx={{ p: 6 }}>
 				<ListItem disableGutters>
 					<TextField
 						value={amount_msat}
-						onChange={(e) => setAmountMSat(Number(e.target.value))}
+						onChange={(e) =>
+							setAmountMSat(Number(e.target.value))
+						}
 						style={{ width: "100%" }}
 						label="Amount (msat)"
 						variant="outlined"
@@ -77,7 +81,9 @@ function CreateInvoiceDialog(props: SimpleDialogProps) {
 				<ListItem disableGutters>
 					<TextField
 						value={expiry_secs}
-						onChange={(e) => setExpirySecs(Number(e.target.value))}
+						onChange={(e) =>
+							setExpirySecs(Number(e.target.value))
+						}
 						style={{ width: "100%" }}
 						label="Expiry (secs)"
 						variant="outlined"
@@ -86,7 +92,9 @@ function CreateInvoiceDialog(props: SimpleDialogProps) {
 				<ListItem disableGutters>
 					<TextField
 						value={description}
-						onChange={(e) => setDescription(e.target.value)}
+						onChange={(e) =>
+							setDescription(e.target.value)
+						}
 						style={{ width: "100%" }}
 						label="Description"
 						variant="outlined"
@@ -100,7 +108,11 @@ function CreateInvoiceDialog(props: SimpleDialogProps) {
 					>
 						Create
 					</Button>
-					<Snackbar message={message} open={isSnackbarOpen} setOpen={setIssnackbarOpen} />
+					<Snackbar
+						message={message}
+						open={isSnackbarOpen}
+						setOpen={setIssnackbarOpen}
+					/>
 				</ListItem>
 			</List>
 		</Dialog>

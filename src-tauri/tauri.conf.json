@@ -42,7 +42,6 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "closable": false,
         "title": "ldk-desktop",
         "width": 2200,
         "height": 1100
