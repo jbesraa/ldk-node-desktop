@@ -78,7 +78,7 @@ impl Wallet {
             seed: seed.to_vec(),
             esplora_address,
         });
-        if lightning::init_lazy(node_conf.clone()) {
+        if lightning::init_lazy(node_conf.clone()).0 {
             dbg!("Lightning node initialized");
         } else {
             dbg!("Lightning node failed to initialize");

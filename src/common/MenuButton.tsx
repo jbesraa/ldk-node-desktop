@@ -13,6 +13,7 @@ import StopNodeDialog from "../pages/home/StopNodeDialog";
 interface MenuButtonProps {
 	walletName: string;
 	isLoading: boolean;
+	switchUpdate: () => void;
 }
 
 export default function MenuButton(props: MenuButtonProps) {
@@ -145,7 +146,7 @@ export default function MenuButton(props: MenuButtonProps) {
 						}}
 					>
 						<DialogWindow
-							extraProps={{ walletName }}
+							extraProps={{ walletName, switchUpdate: props.switchUpdate }}
 							buttonTitle="Stop Node"
 							DialogView={StopNodeDialog}
 						/>

@@ -31,15 +31,16 @@ function BitcoinScreenCard({
 		const timer = setInterval(async () => {
 			let res = await is_node_running(title);
 			setIsNodeRunning(res);
-		}, 10000);
+		}, 5000);
 		return () => clearInterval(timer);
 	}, []);
+
 	useEffect(() => {
 		const handler = async () => {
 			let res = await is_node_running(title);
 			setIsNodeRunning(res);
-		};
-		handler();
+		}
+		handler()
 	}, []);
 
 	const CardStyle = {

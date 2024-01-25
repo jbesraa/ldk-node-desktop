@@ -13,7 +13,7 @@ export interface NodeActions {
 	get_logs: () => Promise<string[]>;
 	sync_wallet: () => Promise<boolean>;
 	connect_to_peer: (i: ConnectToPeerInput) => Promise<boolean>;
-	start_node: (i: string) => Promise<boolean>;
+	start_node: (i: string) => Promise<[boolean, string]>;
 	stop_node: (nodeName: string) => Promise<boolean>;
 	list_peers: (nodeName: string) => Promise<PeerDetails[]>;
 	new_onchain_address: (nodeName: string) => Promise<string>;
@@ -171,7 +171,7 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function start_node(nodeName: string): Promise<boolean> {
+	async function start_node(nodeName: string): Promise<[boolean, string]> {
 		try {
 			const res: boolean = await invoke("start_node", {
 				nodeName,
@@ -221,7 +221,6 @@ export const NodeContextProvider = ({
 			const res: string = await invoke("new_onchain_address", {
 				nodeName,
 			});
-			console.log("HO", res);
 			return res;
 		} catch (e) {
 			console.log("Error new onchain address ", e);
@@ -311,12 +310,10 @@ export const NodeContextProvider = ({
 		nodeName: string
 	): Promise<string> {
 		try {
-			console.log("here");
 			if (!nodeName) return "";
 			const res: string = await invoke("get_esplora_address", {
 				nodeName,
 			});
-			console.log("here", res);
 			return res;
 		} catch (e) {
 			console.log("Error get_esplora_address", e);

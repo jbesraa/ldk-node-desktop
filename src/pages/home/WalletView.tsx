@@ -1,4 +1,5 @@
 import {
+	Backdrop,
 	Card,
 	CardContent,
 	Divider,
@@ -6,6 +7,7 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
+import SyncIcon from '@mui/icons-material/Sync';
 import { useEffect, useState } from "react";
 import { useNodeContext } from "../../state/NodeContext";
 import MenuButton from "../../common/MenuButton";
@@ -22,6 +24,7 @@ import DataSaverOnIcon from "@mui/icons-material/DataSaverOn";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PublicIcon from "@mui/icons-material/Public";
 import FlagIcon from "@mui/icons-material/Flag";
+import { Snackbar } from "../../common";
 
 export interface Tx {
 	time: number;
@@ -45,11 +48,16 @@ interface SectionTitleInfoProps {
 	isRunning: boolean;
 	isFold: boolean;
 	isLoading?: boolean;
+	switchUpdate: () => void;
 }
 
 const SectionTitleInfo = (props: SectionTitleInfoProps) => {
 	const { start_node } = useNodeContext();
-	const { nodeName, isLoading, isRunning } = props;
+	const { nodeName, isLoading, isRunning, switchUpdate } = props;
+	const [startError, setStartError] = useState("");
+	const [isOpenSnackbar, setIsOpenSnackbar] = useState(false);
+	const [isBackdropOpen, setIsBackdropOpen] = useState(false);
+
 	return (
 		<Card
 			style={{
@@ -68,6 +76,7 @@ const SectionTitleInfo = (props: SectionTitleInfoProps) => {
 			>
 				{isRunning ? (
 					<MenuButton
+						switchUpdate={switchUpdate}
 						walletName={nodeName}
 						isLoading={Boolean(isLoading)}
 					/>
@@ -77,14 +86,45 @@ const SectionTitleInfo = (props: SectionTitleInfoProps) => {
 						title="Start node"
 						color="error"
 						onClick={async (_) => {
-							const res = await start_node(nodeName);
-							console.log(res);
+							setIsBackdropOpen(true);
+							const [success, message] =
+								await start_node(nodeName);
+							if (!success) {
+								const m = message.includes(
+									"Failed to update fee rate estimates"
+								)
+									? `${message} Validate your Esplora URL is accessible`
+									: "Failed to start node";
+								setStartError(m);
+								setIsOpenSnackbar(true);
+								setIsBackdropOpen(false);
+							} else {
+								// RELOAD NODE DATA
+								switchUpdate();
+								setTimeout(() => {}, 5000);
+								setIsBackdropOpen(false);
+							}
 						}}
 					>
 						<PlayCircleFilledWhiteIcon fontSize="large" />
 					</IconButton>
 				)}
 			</Typography>
+			<Snackbar
+				message={startError}
+				open={isOpenSnackbar}
+				setOpen={setIsOpenSnackbar}
+			/>
+			<Backdrop
+				sx={{
+					color: "#fff",
+					zIndex: (theme) => theme.zIndex.drawer + 1,
+				}}
+				open={isBackdropOpen}
+			>
+				<SyncIcon fontSize="large" color="inherit" />
+				<p style={{ textAlign: "center" }}>Starting Node</p>
+			</Backdrop>
 		</Card>
 	);
 };
@@ -134,6 +174,7 @@ function WalletView(props: WalletData) {
 	const [peers, setPeers] = useState<TablePeerDetails[]>([]);
 	const [channels, setChannels] = useState<ChannelDetails[]>([]);
 	const [isNodeRunning, setIsNodeRunning] = useState(false);
+	const [update, setUpdate] = useState(false);
 	const [showNodeInfo] = useState(true);
 	const [showPeersInfo, setShowPeersInfo] = useState(true);
 	const [showChannelsInfo, setShowChannelsInfo] = useState(true);
@@ -141,6 +182,8 @@ function WalletView(props: WalletData) {
 	const [activePeersStep, setActivePeersStep] = useState(0);
 	const [activeChannelsStep, setActiveChannelsStep] = useState(0);
 	const [esploraAddress, setEsploraAddress] = useState("");
+
+	const switchUpdate = () => setUpdate(!update);
 
 	useEffect(() => {
 		const handler = async () => {
@@ -159,9 +202,8 @@ function WalletView(props: WalletData) {
 				let node_id = await get_node_id(nodeName);
 				console.log(nodeName);
 				console.log(node_id);
-				let on_chain_balance = await get_total_onchain_balance(
-					nodeName
-				);
+				let on_chain_balance =
+					await get_total_onchain_balance(nodeName);
 				let peers = await list_peers(nodeName);
 				const new_rows: TablePeerDetails[] = peers.map(
 					(row: PeerDetails) => {
@@ -198,7 +240,7 @@ function WalletView(props: WalletData) {
 			setTotalOnChainBalance(0);
 			setIsNodeRunning(false);
 		};
-	}, [nodeName]);
+	}, [nodeName, update]);
 
 	if (!nodeName) {
 		return <></>;
@@ -246,19 +288,27 @@ function WalletView(props: WalletData) {
 									}}
 								>
 									<CardContent>
-										<Typography variant="subtitle2" color="gray">
+										<Typography
+											variant="subtitle2"
+											color="gray"
+										>
 											Node ID
 										</Typography>
 										<Typography
 											variant="subtitle1"
 											style={{
-												whiteSpace: "pre-wrap",
-												wordWrap: "break-word",
+												whiteSpace:
+													"pre-wrap",
+												wordWrap:
+													"break-word",
 											}}
 											color="primary"
 										>
 											{nodeId
-												? ` ${nodeId.slice(0, 5)}..${nodeId.slice(
+												? ` ${nodeId.slice(
+														0,
+														5
+												  )}..${nodeId.slice(
 														-6
 												  )} `
 												: "-"}
@@ -274,7 +324,10 @@ function WalletView(props: WalletData) {
 							}}
 						>
 							<CardContent>
-								<Typography variant="subtitle2" color="gray">
+								<Typography
+									variant="subtitle2"
+									color="gray"
+								>
 									Network Address
 								</Typography>
 								<Typography
@@ -285,7 +338,9 @@ function WalletView(props: WalletData) {
 									}}
 									color="primary"
 								>
-									{listeningAddress ? ` ${listeningAddress} ` : "-"}
+									{listeningAddress
+										? ` ${listeningAddress} `
+										: "-"}
 								</Typography>
 							</CardContent>
 						</Card>
@@ -296,15 +351,25 @@ function WalletView(props: WalletData) {
 									cursor: "pointer",
 									backgroundColor: "inherit",
 								}}
-								onClick={() => writeText(esploraAddress)}
+								onClick={() =>
+									writeText(esploraAddress)
+								}
 							>
 								<CardContent>
-									<Typography variant="subtitle2" color="gray">
+									<Typography
+										variant="subtitle2"
+										color="gray"
+									>
 										Esplora Address
 									</Typography>
-									<Typography variant="subtitle1" color="primary">
+									<Typography
+										variant="subtitle1"
+										color="primary"
+									>
 										{esploraAddress
-											? `..${esploraAddress.slice(-15)} `
+											? `..${esploraAddress.slice(
+													-15
+											  )} `
 											: "-"}
 									</Typography>
 								</CardContent>
@@ -317,7 +382,10 @@ function WalletView(props: WalletData) {
 							}}
 						>
 							<CardContent>
-								<Typography variant="subtitle2" color="gray">
+								<Typography
+									variant="subtitle2"
+									color="gray"
+								>
 									On-Chain Balance
 								</Typography>
 								<Typography
@@ -341,7 +409,10 @@ function WalletView(props: WalletData) {
 							}}
 						>
 							<CardContent>
-								<Typography variant="subtitle2" color="gray">
+								<Typography
+									variant="subtitle2"
+									color="gray"
+								>
 									Lightning Balance
 								</Typography>
 								<Typography
@@ -365,7 +436,10 @@ function WalletView(props: WalletData) {
 							}}
 						>
 							<CardContent>
-								<Typography variant="subtitle2" color="gray">
+								<Typography
+									variant="subtitle2"
+									color="gray"
+								>
 									In Liquidity
 								</Typography>
 								<Typography
@@ -389,7 +463,10 @@ function WalletView(props: WalletData) {
 							}}
 						>
 							<CardContent>
-								<Typography variant="subtitle2" color="gray">
+								<Typography
+									variant="subtitle2"
+									color="gray"
+								>
 									Out Liquidity
 								</Typography>
 								<Typography
@@ -413,7 +490,10 @@ function WalletView(props: WalletData) {
 							}}
 						>
 							<CardContent>
-								<Typography variant="subtitle2" color="gray">
+								<Typography
+									variant="subtitle2"
+									color="gray"
+								>
 									Channels
 								</Typography>
 								<Typography
@@ -424,7 +504,9 @@ function WalletView(props: WalletData) {
 									}}
 									color="primary"
 								>
-									{isNodeRunning ? `${channels.length}` : "-"}
+									{isNodeRunning
+										? `${channels.length}`
+										: "-"}
 								</Typography>
 							</CardContent>
 						</Card>
@@ -435,7 +517,10 @@ function WalletView(props: WalletData) {
 							}}
 						>
 							<CardContent>
-								<Typography variant="subtitle2" color="gray">
+								<Typography
+									variant="subtitle2"
+									color="gray"
+								>
 									Peers
 								</Typography>
 								<Typography
@@ -446,7 +531,9 @@ function WalletView(props: WalletData) {
 									}}
 									color="primary"
 								>
-									{isNodeRunning ? `${peers.length}` : "-"}
+									{isNodeRunning
+										? `${peers.length}`
+										: "-"}
 								</Typography>
 							</CardContent>
 						</Card>
@@ -454,6 +541,7 @@ function WalletView(props: WalletData) {
 				</div>
 				<div style={{ padding: "1em" }}>
 					<SectionTitleInfo
+						switchUpdate={switchUpdate}
 						nodeName={nodeName}
 						isFold={showNodeInfo}
 						isRunning={isNodeRunning}
@@ -509,10 +597,13 @@ function WalletView(props: WalletData) {
 										backgroundColor: "inherit",
 										maxHeight: "10vh",
 										boxShadow: "none",
-										borderRight: "1px dashed #52796f",
+										borderRight:
+											"1px dashed #52796f",
 									}}
 								>
-									<CardContent style={{ display: "grid" }}>
+									<CardContent
+										style={{ display: "grid" }}
+									>
 										<Typography
 											variant="subtitle2"
 											color="black"
@@ -520,14 +611,20 @@ function WalletView(props: WalletData) {
 												textAlign: "left",
 												cursor: "pointer",
 											}}
-											onClick={() => writeText(peer.node_id)}
+											onClick={() =>
+												writeText(
+													peer.node_id
+												)
+											}
 										>
 											Node ID
 											{peer.node_id
 												? ` ${peer.node_id.slice(
 														0,
 														5
-												  )}..${peer.node_id.slice(-6)} `
+												  )}..${peer.node_id.slice(
+														-6
+												  )} `
 												: "-"}
 										</Typography>
 										<Typography
@@ -537,20 +634,30 @@ function WalletView(props: WalletData) {
 											}}
 											color={"black"}
 										>
-											Network Address {peer.address}
+											Network Address{" "}
+											{peer.address}
 										</Typography>
 										<div
 											style={{
 												justifySelf: "right",
 												display: "grid",
-												gridTemplateColumns: "1fr 1fr 1fr",
+												gridTemplateColumns:
+													"1fr 1fr 1fr",
 												gap: "1em",
 											}}
 										>
-											<Tooltip title={ peer.is_connected ?  "Peer is online": "Peer is offline"}>
+											<Tooltip
+												title={
+													peer.is_connected
+														? "Peer is online"
+														: "Peer is offline"
+												}
+											>
 												<ConnectWithoutContactIcon
 													color={
-														peer.is_connected ? "success" : "error"
+														peer.is_connected
+															? "success"
+															: "error"
 													}
 												/>
 											</Tooltip>
@@ -563,17 +670,24 @@ function WalletView(props: WalletData) {
 											>
 												<DataSaverOnIcon
 													color={
-														peer.is_persisted ? "success" : "error"
+														peer.is_persisted
+															? "success"
+															: "error"
 													}
 												/>
 											</Tooltip>
 											<Tooltip
-												style={{ justifySelf: "right" }}
+												style={{
+													justifySelf:
+														"right",
+												}}
 												title="Actions"
 											>
 												<MoreVertIcon
 													color="disabled"
-													style={{ cursor: "pointer" }}
+													style={{
+														cursor: "pointer",
+													}}
 												/>
 											</Tooltip>
 										</div>
@@ -594,7 +708,9 @@ function WalletView(props: WalletData) {
 				<SectionTitle
 					title="Channels"
 					disabled={true}
-					onClick={() => setShowChannelsInfo(!showChannelsInfo)}
+					onClick={() =>
+						setShowChannelsInfo(!showChannelsInfo)
+					}
 				/>
 			</div>
 			<div
@@ -621,7 +737,8 @@ function WalletView(props: WalletData) {
 					{channels
 						?.slice(
 							activeChannelsStep * 4,
-							channels.length < activeChannelsStep * 4 + 4
+							channels.length <
+								activeChannelsStep * 4 + 4
 								? channels.length
 								: activeChannelsStep * 4 + 4
 						)
@@ -632,10 +749,13 @@ function WalletView(props: WalletData) {
 										backgroundColor: "inherit",
 										maxHeight: "10vh",
 										boxShadow: "none",
-										borderRight: "1px dashed #52796f",
+										borderRight:
+											"1px dashed #52796f",
 									}}
 								>
-									<CardContent style={{ display: "grid" }}>
+									<CardContent
+										style={{ display: "grid" }}
+									>
 										<Typography
 											variant="subtitle2"
 											color="black"
@@ -643,14 +763,20 @@ function WalletView(props: WalletData) {
 												textAlign: "left",
 												cursor: "pointer",
 											}}
-											onClick={() => writeText(channel.channel_id)}
+											onClick={() =>
+												writeText(
+													channel.channel_id
+												)
+											}
 										>
 											ID
 											{channel.channel_id
 												? ` ${channel.channel_id.slice(
 														0,
 														5
-												  )}..${channel.channel_id.slice(-6)} `
+												  )}..${channel.channel_id.slice(
+														-6
+												  )} `
 												: "-"}
 										</Typography>
 										<Typography
@@ -660,13 +786,15 @@ function WalletView(props: WalletData) {
 											}}
 											color={"black"}
 										>
-											Balance {channel.balance_msat}
+											Balance{" "}
+											{channel.balance_msat}
 										</Typography>
 										<div
 											style={{
 												justifySelf: "right",
 												display: "grid",
-												gridTemplateColumns: "1fr 1fr 1fr",
+												gridTemplateColumns:
+													"1fr 1fr 1fr",
 												gap: "1em",
 											}}
 										>
@@ -679,7 +807,9 @@ function WalletView(props: WalletData) {
 											>
 												<FlagIcon
 													color={
-														channel.is_usable ? "success" : "error"
+														channel.is_usable
+															? "success"
+															: "error"
 													}
 												/>
 											</Tooltip>
@@ -692,17 +822,24 @@ function WalletView(props: WalletData) {
 											>
 												<PublicIcon
 													color={
-														channel.is_public ? "success" : "error"
+														channel.is_public
+															? "success"
+															: "error"
 													}
 												/>
 											</Tooltip>
 											<Tooltip
-												style={{ justifySelf: "right" }}
+												style={{
+													justifySelf:
+														"right",
+												}}
 												title="Actions"
 											>
 												<MoreVertIcon
 													color="disabled"
-													style={{ cursor: "pointer" }}
+													style={{
+														cursor: "pointer",
+													}}
 												/>
 											</Tooltip>
 										</div>

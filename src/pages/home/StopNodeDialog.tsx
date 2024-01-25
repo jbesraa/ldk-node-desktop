@@ -1,33 +1,46 @@
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { Button } from "@mui/material";
+import { Backdrop, Button } from "@mui/material";
+import SyncIcon from "@mui/icons-material/Sync";
 import { useNodeContext } from "../../state/NodeContext";
+import { Snackbar } from "../../common";
+import { useState } from "react";
 
 interface SimpleDialogProps {
 	open: boolean;
 	selectedValue: string;
 	onClose: (value: string) => void;
 	walletName: string;
+	switchUpdate: () => void;
 }
 
 function StopNodeDialog(props: SimpleDialogProps) {
 	const { stop_node } = useNodeContext();
-	const { onClose, selectedValue, open, walletName } = props;
-	console.log(walletName);
-
+	const { onClose, selectedValue, open, walletName, switchUpdate} = props;
+	const [isOpenSnackbar, setIsOpenSnackbar] = useState(false);
+	const [isBackdropOpen, setIsBackdropOpen] = useState(false);
 	const title = "Stop Node";
 
 	const handleClose = () => {
 		onClose(selectedValue);
 	};
 
-	const new_onchain = async () => {
+	const stopNode = async () => {
 		if (!walletName) {
 			console.log("wallet name is missing, stop node dialog");
 			return;
 		}
-		const res = await stop_node(walletName);
-		console.log(res);
+		setIsBackdropOpen(true);
+		const success = await stop_node(walletName);
+		if (!success) {
+			setIsOpenSnackbar(true);
+			setIsBackdropOpen(false);
+		} else {
+			// RELOAD NODE DATA
+			switchUpdate();
+			setTimeout(() => {}, 5000);
+			setIsBackdropOpen(false);
+		}
 	};
 
 	return (
@@ -40,7 +53,24 @@ function StopNodeDialog(props: SimpleDialogProps) {
 			<DialogTitle sx={{ textAlign: "center" }}>
 				{title}
 			</DialogTitle>
-			<Button color="warning" onClick={new_onchain}>Stop Node</Button>
+			<Button color="warning" onClick={stopNode}>
+				Stop Node
+			</Button>
+			<Snackbar
+				message={"Stopping node failed"}
+				open={isOpenSnackbar}
+				setOpen={setIsOpenSnackbar}
+			/>
+			<Backdrop
+				sx={{
+					color: "#fff",
+					zIndex: (theme) => theme.zIndex.drawer + 1,
+				}}
+				open={isBackdropOpen}
+			>
+				<SyncIcon fontSize="large" color="inherit" />
+				<p style={{ textAlign: "center" }}>Stopping Node</p>
+			</Backdrop>
 		</Dialog>
 	);
 }

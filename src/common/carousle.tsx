@@ -22,8 +22,6 @@ export default function Stepper({
 		setActiveStep((prevActiveStep) => prevActiveStep - 1);
 	};
 
-			console.log(steps);
-			console.log("active", activeStep);
 	return (
 		<MobileStepper
 			variant="dots"

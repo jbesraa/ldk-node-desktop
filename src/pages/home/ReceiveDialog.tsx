@@ -24,10 +24,8 @@ interface SimpleDialogProps {
 }
 
 function ReceiveDialog(props: SimpleDialogProps) {
-	console.log(props);
 	const { new_onchain_address } = useNodeContext();
 	const { onClose, selectedValue, open, walletName } = props;
-	console.log(walletName);
 	const [amount, setAmount] = useState("");
 	const [new_address, setNewAddress] = useState("");
 

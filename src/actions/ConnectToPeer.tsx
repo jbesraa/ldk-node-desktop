@@ -43,11 +43,8 @@ function ConnectToPeerDialog(props: SimpleDialogProps) {
 				!data.nodeId ||
 				!data.netAddress
 			) {
-				console.log("DATA IS MISSING");
-				console.log(data);
 				return;
 			}
-			console.log(data);
 			let res = await invoke("connect_to_node", {
 				...data,
 			});

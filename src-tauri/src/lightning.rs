@@ -17,33 +17,30 @@ use crate::paths::UserPaths;
 use crate::wallet::WalletConfig;
 
 #[tauri::command]
-pub fn start_node(nodeName: String) -> bool {
-    let seed = match std::fs::read(UserPaths::new().seed_file(nodeName.clone())) {
+pub fn start_node(node_name: String) -> (bool, String) {
+    let seed = match std::fs::read(UserPaths::new().seed_file(node_name.clone())) {
         Ok(s) => s,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
-    let config_file = UserPaths::new().config_file(nodeName.clone());
+    let config_file = UserPaths::new().config_file(node_name.clone());
     let config_file = match std::fs::read(config_file) {
         Ok(s) => s,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     let config: WalletConfig = match serde_json::from_slice(&config_file) {
         Ok(c) => c,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     init_lazy(Arc::new(NodeConf {
         network: ldk_node::bitcoin::Network::Testnet,
         seed,
-        storage_dir: UserPaths::new().ldk_data_dir(nodeName.clone()),
+        storage_dir: UserPaths::new().ldk_data_dir(node_name.clone()),
         listening_address: config.get_listening_address(),
         esplora_address: config.get_esplora_address(),
     }))
@@ -655,7 +652,7 @@ lazy_static! {
     static ref NODES: RwLock<HashMap<String, Arc<Node<SqliteStore>>>> = RwLock::new(HashMap::new());
 }
 
-pub fn init_lazy(config: Arc<NodeConf>) -> bool {
+pub fn init_lazy(config: Arc<NodeConf>) -> (bool, String) {
     let storage_dir = config.storage_dir.clone();
     let mut builder = Builder::new();
     builder.set_network(Network::Testnet);
@@ -665,15 +662,13 @@ pub fn init_lazy(config: Arc<NodeConf>) -> bool {
     let socket_address = match SocketAddress::from_str(&config.listening_address) {
         Ok(s) => s,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     let builder = match builder.set_listening_addresses(vec![socket_address]) {
         Ok(b) => b,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     builder.set_esplora_server(config.esplora_address.clone());
@@ -683,23 +678,20 @@ pub fn init_lazy(config: Arc<NodeConf>) -> bool {
     let builder = match builder.set_entropy_seed_bytes(config.seed.clone()) {
         Ok(b) => b,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     let node = match builder.build() {
         Ok(n) => n,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     let node = Arc::new(node);
     let mut nodes = match NODES.write() {
         Ok(n) => n,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     nodes.insert(storage_dir.clone(), node.clone());
@@ -711,11 +703,10 @@ pub fn init_lazy(config: Arc<NodeConf>) -> bool {
                 println!("EVENT: {:?}", event);
                 node.event_handled();
             });
-            true
+            (true, "".to_string())
         }
         Err(e) => {
-            dbg!(&e);
-            false
+            return (false, e.to_string());
         }
     }
 }
