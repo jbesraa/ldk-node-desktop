@@ -79,3 +79,8 @@ export interface StartNodeInput {
 	listeningAddress: string;
 	esploraAddress: string;
 }
+
+export interface UpdateConfigInput {
+	esploraAddress: string;
+	listeningAddress: string;
+}

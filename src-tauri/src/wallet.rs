@@ -18,11 +18,60 @@ pub struct Wallet;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct WalletConfig {
+    wallet_name: String,
     listening_address: String,
     esplora_address: String,
 }
 
 impl WalletConfig {
+    pub fn new(wallet_name: &str) -> anyhow::Result<Self> {
+        let config_file = UserPaths::new().config_file(wallet_name);
+        let config_file = match std::fs::read(config_file) {
+            Ok(s) => s,
+            Err(e) => {
+                return Err(anyhow::anyhow!(
+                    "Failed to read config file for wallet {}: {}",
+                    wallet_name,
+                    e
+                ))
+            }
+        };
+        let config: WalletConfig = match serde_json::from_slice(&config_file) {
+            Ok(c) => c,
+            Err(e) => {
+                return Err(anyhow::anyhow!(
+                    "Failed to parse config file for wallet {}: {}",
+                    wallet_name,
+                    e
+                ))
+            }
+        };
+        Ok(config)
+    }
+    pub fn update(&mut self, listening_address: String, esplora_address: String) -> bool {
+        self.listening_address = listening_address;
+        self.esplora_address = esplora_address;
+        self.write()
+    }
+    fn write(&self) -> bool {
+        let config_file = UserPaths::new().config_file(&self.wallet_name);
+        let mut config_file = match std::fs::File::create(config_file) {
+            Ok(file) => file,
+            Err(_) => return false,
+        };
+        let pretty_json = match serde_json::to_string_pretty(&self) {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        match config_file.write_all(pretty_json.as_bytes()) {
+            Ok(_) => {}
+            Err(_) => return false,
+        };
+        match config_file.sync_all() {
+            Ok(_) => true,
+            Err(_) => false,
+        }
+    }
     // set listening address
     fn listening_address(&mut self, listening_address: String) {
         self.listening_address = listening_address;
@@ -51,23 +100,15 @@ impl Wallet {
         let mnemonic = Mnemonic::generate(12).unwrap();
         let seed = mnemonic.to_seed_normalized("");
         let project_base_dir = UserPaths::new().project_base_dir();
-        let wallet_dir = UserPaths::new().wallet_dir(wallet_name.clone());
-        let seed_file = UserPaths::new().seed_file(wallet_name.clone());
-        let config_file = UserPaths::new().config_file(wallet_name);
+        let wallet_dir = UserPaths::new().wallet_dir(&wallet_name);
+        let seed_file = UserPaths::new().seed_file(&wallet_name);
         std::fs::create_dir_all(&project_base_dir).unwrap();
         std::fs::create_dir_all(&wallet_dir).unwrap();
         let mut seed_file = std::fs::File::create(seed_file).unwrap();
         seed_file.write_all(&seed).unwrap();
         seed_file.sync_all().unwrap();
-        let mut config_file = std::fs::File::create(config_file).unwrap();
-        let config = WalletConfig {
-            listening_address: listening_address.clone(),
-            esplora_address: esplora_address.clone(),
-        };
-        config_file
-            .write_all(serde_json::to_string_pretty(&config).unwrap().as_bytes())
-            .unwrap();
-        config_file.sync_all().unwrap();
+        let config = WalletConfig::new(&wallet_name)?;
+        config.write();
 
         let ldk_data_dir = format!("{}/ldk-data", wallet_dir);
         std::fs::create_dir_all(&ldk_data_dir).unwrap();
@@ -104,20 +145,8 @@ impl Wallet {
         esplora_address: String,
         listening_address: String,
     ) -> bool {
-        let config_file_path = UserPaths::new().config_file(wallet_name);
-        let config_file = std::fs::read(&config_file_path).unwrap();
-        let mut config: WalletConfig = match serde_json::from_slice(&config_file) {
-            Ok(config) => config,
-            Err(_) => return false,
-        };
-        config.listening_address(listening_address);
-        config.esplora_address(esplora_address);
-        let mut config_file = match std::fs::File::create(&config_file_path) {
-            Ok(file) => file,
-            Err(_) => return false,
-        };
-        match config_file.write_all(serde_json::to_string_pretty(&config).unwrap().as_bytes()) {
-            Ok(_) => true,
+        match WalletConfig::new(&wallet_name) {
+            Ok(mut config) => config.update(listening_address, esplora_address),
             Err(_) => false,
         }
     }

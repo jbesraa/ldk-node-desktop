@@ -6,10 +6,12 @@ import {
 	PaymentData,
 	ConnectToPeerInput,
 	BitcoinUnit,
+	UpdateConfigInput,
 } from "../types";
 import { info, error } from "tauri-plugin-log-api";
 
 export interface NodeActions {
+	update_config: (i: UpdateConfigInput) => Promise<boolean>;
 	get_logs: () => Promise<string[]>;
 	sync_wallet: () => Promise<boolean>;
 	connect_to_peer: (i: ConnectToPeerInput) => Promise<boolean>;
@@ -171,7 +173,9 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function start_node(nodeName: string): Promise<[boolean, string]> {
+	async function start_node(
+		nodeName: string
+	): Promise<[boolean, string]> {
 		try {
 			const res: boolean = await invoke("start_node", {
 				nodeName,
@@ -350,8 +354,23 @@ export const NodeContextProvider = ({
 		}
 	}
 
+	async function update_config(
+		i: UpdateConfigInput
+	): Promise<boolean> {
+		try {
+			const res: boolean = await invoke("update_config", {
+				...i,
+			});
+			return res;
+		} catch (e) {
+			console.log("Error update_config", e);
+			return false;
+		}
+	}
+
 	const state: NodeActions = {
 		sync_wallet,
+		update_config,
 		connect_to_peer,
 		start_node,
 		stop_node,

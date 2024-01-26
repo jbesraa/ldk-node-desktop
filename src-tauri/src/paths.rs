@@ -28,19 +28,19 @@ impl UserPaths {
         format!("{}/wallets", self.project_base_dir())
     }
 
-    pub fn wallet_dir(&self, wallet_name: String) -> String {
+    pub fn wallet_dir(&self, wallet_name: &str) -> String {
         format!("{}/{}", self.wallets_dir(), wallet_name)
     }
 
-    pub fn seed_file(&self, wallet_name: String) -> String {
+    pub fn seed_file(&self, wallet_name: &str) -> String {
         format!("{}/seed", self.wallet_dir(wallet_name))
     }
 
-    pub fn config_file(&self, wallet_name: String) -> String {
+    pub fn config_file(&self, wallet_name: &str) -> String {
         format!("{}/config.json", self.wallet_dir(wallet_name))
     }
 
-    pub fn ldk_data_dir(&self, wallet_name: String) -> String {
+    pub fn ldk_data_dir(&self, wallet_name: &str) -> String {
         format!("{}/ldk-data", self.wallet_dir(wallet_name))
     }
 }

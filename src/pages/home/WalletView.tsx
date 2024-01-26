@@ -20,8 +20,8 @@ import Stepper from "../../common/carousle";
 import { writeText } from "@tauri-apps/api/clipboard";
 import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
 import ConnectWithoutContactIcon from "@mui/icons-material/ConnectWithoutContact";
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import DataSaverOnIcon from "@mui/icons-material/DataSaverOn";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PublicIcon from "@mui/icons-material/Public";
 import FlagIcon from "@mui/icons-material/Flag";
 import { Snackbar } from "../../common";
@@ -99,7 +99,6 @@ const SectionTitleInfo = (props: SectionTitleInfoProps) => {
 								setIsOpenSnackbar(true);
 								setIsBackdropOpen(false);
 							} else {
-								// RELOAD NODE DATA
 								switchUpdate();
 								setTimeout(() => {}, 5000);
 								setIsBackdropOpen(false);
@@ -109,6 +108,7 @@ const SectionTitleInfo = (props: SectionTitleInfoProps) => {
 						<PlayCircleFilledWhiteIcon fontSize="large" />
 					</IconButton>
 				)}
+				<MoreVertIcon />
 			</Typography>
 			<Snackbar
 				message={startError}
