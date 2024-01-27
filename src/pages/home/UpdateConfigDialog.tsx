@@ -1,32 +1,23 @@
-import * as React from "react";
 import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
 import { useNodeContext } from "../../state/NodeContext";
-import { useState } from "react";
-import { Network, StartNodeInput, UpdateConfigInput } from "../../types";
-import { Snackbar } from "../../common";
+import { useEffect, useState } from "react";
+import { UpdateConfigInput } from "../../types";
+import { GlobalButton, Snackbar } from "../../common";
 
-const buttonStyle = {
-	color: "#344e41",
-	fontSize: "1em",
-	width: "100%",
-	fontWeight: "600",
-	backgroundColor: "#a3b18a",
-};
-
-export interface SimpleDialogProps {
+interface SimpleDialogProps {
 	open: boolean;
 	selectedValue: string;
+	walletName: string;
 	onClose: (value: string) => void;
 }
 
 function UpdateConfigDialog(props: SimpleDialogProps) {
 	const { update_config } = useNodeContext();
-	const { onClose, selectedValue, open } = props;
+	const { onClose, selectedValue, open, walletName } = props;
 	const [message, setMessage] = useState("");
 	const [listeningAddress, setListeningAddress] =
 		useState("0.0.0.0:9735");
@@ -37,9 +28,11 @@ function UpdateConfigDialog(props: SimpleDialogProps) {
 
 	const update = async () => {
 		const input: UpdateConfigInput = {
+			walletName, 
 			listeningAddress,
 			esploraAddress,
 		};
+			console.log(input);
 		const res = await update_config(input);
 		if(res) {
 			setMessage("Updated values successfully");
@@ -49,7 +42,7 @@ function UpdateConfigDialog(props: SimpleDialogProps) {
 			setIssnackbarOpen(true);
 		}
 	} 
-	React.useEffect(() => {
+	useEffect(() => {
 		return () => setIssnackbarOpen(false);
 	}, []);
 
@@ -87,13 +80,11 @@ function UpdateConfigDialog(props: SimpleDialogProps) {
 					/>
 				</ListItem>
 				<ListItem disableGutters>
-					<Button
-						style={buttonStyle}
-						variant="contained"
-						onClick={update}
-					>
-						Update
-					</Button>
+				<GlobalButton
+					onClick={update}
+					title={"Update"}
+				/>
+		
 					<Snackbar
 						message={message}
 						open={isSnackbarOpen}

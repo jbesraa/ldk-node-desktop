@@ -1,12 +1,6 @@
 import { useState } from "react";
-import Button from "@mui/material/Button";
 import { IconButton } from "@mui/material";
-
-const buttonStyle = {
-	color: "#344e41",
-	// fontWeight: "600",
-	// backgroundColor: "#a3b18a",
-};
+import GlobalButton from "./Button";
 
 function DialogWindow({
 	DialogView,
@@ -15,6 +9,7 @@ function DialogWindow({
 	onCloseHandler,
 	extraProps,
 	ButtonIcon,
+	TitleButton,
 }: {
 	DialogView: any;
 	buttonTitle: string;
@@ -22,6 +17,7 @@ function DialogWindow({
 	onCloseHandler?: any;
 	extraProps?: any;
 	ButtonIcon?: any;
+	TitleButton?: any;
 }) {
 	const [open, setOpen] = useState(false);
 	const handleClickOpen = () => {
@@ -38,14 +34,14 @@ function DialogWindow({
 				<IconButton onClick={handleClickOpen}>
 					{ButtonIcon}
 				</IconButton>
+			) : TitleButton ? (
+				<TitleButton onClick={handleClickOpen} />
 			) : (
-				<Button
-					size="large"
-					style={style ? style : buttonStyle}
+				<GlobalButton
+					style={style}
 					onClick={handleClickOpen}
-				>
-					{buttonTitle}
-				</Button>
+					title={buttonTitle}
+				/>
 			)}
 			<DialogView
 				open={open}

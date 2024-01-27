@@ -1,9 +1,9 @@
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { Backdrop, Button } from "@mui/material";
+import { Backdrop, List, ListItem } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import { useNodeContext } from "../../state/NodeContext";
-import { Snackbar } from "../../common";
+import { GlobalButton, Snackbar } from "../../common";
 import { useState } from "react";
 
 interface SimpleDialogProps {
@@ -16,10 +16,10 @@ interface SimpleDialogProps {
 
 function StopNodeDialog(props: SimpleDialogProps) {
 	const { stop_node } = useNodeContext();
-	const { onClose, selectedValue, open, walletName, switchUpdate} = props;
+	const { onClose, selectedValue, open, walletName, switchUpdate } =
+		props;
 	const [isOpenSnackbar, setIsOpenSnackbar] = useState(false);
 	const [isBackdropOpen, setIsBackdropOpen] = useState(false);
-	const title = "Stop Node";
 
 	const handleClose = () => {
 		onClose(selectedValue);
@@ -51,11 +51,16 @@ function StopNodeDialog(props: SimpleDialogProps) {
 			open={open}
 		>
 			<DialogTitle sx={{ textAlign: "center" }}>
-				{title}
+				You are about to stop your node. Are you sure?
 			</DialogTitle>
-			<Button color="warning" onClick={stopNode}>
-				Stop Node
-			</Button>
+			<List sx={{ p: 6 }}>
+			<ListItem disableGutters>
+				<GlobalButton
+					onClick={stopNode}
+					title="Stop Node"
+				/>
+			</ListItem>
+			</List>
 			<Snackbar
 				message={"Stopping node failed"}
 				open={isOpenSnackbar}

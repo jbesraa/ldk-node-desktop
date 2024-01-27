@@ -2,12 +2,12 @@ import AppBar from "./AppBar";
 import DialogWindow from "./Dialog";
 import Snackbar from "./Snackbar";
 import SideBar from "./SideBar";
-import SelectInput from "./SelectInput";
+import GlobalButton from "./Button";
 
 export {
 	AppBar,
 	DialogWindow,
 	Snackbar,
 	SideBar,
-	SelectInput,
+	GlobalButton,
 };

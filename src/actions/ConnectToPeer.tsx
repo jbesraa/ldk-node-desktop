@@ -1,20 +1,11 @@
 import * as React from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { Snackbar } from "../common";
-
-const buttonStyle = {
-	color: "#344e41",
-	fontSize: "1em",
-	width: "100%",
-	fontWeight: "600",
-	backgroundColor: "#a3b18a",
-};
+import { GlobalButton, Snackbar } from "../common";
 
 export interface SimpleDialogProps {
 	open: boolean;
@@ -103,13 +94,7 @@ function ConnectToPeerDialog(props: SimpleDialogProps) {
 					/>
 				</ListItem>
 				<ListItem disableGutters>
-					<Button
-						style={buttonStyle}
-						variant="contained"
-						onClick={connect_to_peer}
-					>
-						Connect
-					</Button>
+				<GlobalButton onClick={connect_to_peer} title="Connect" />
 					<Snackbar
 						message={message}
 						open={isSnackbarOpen}

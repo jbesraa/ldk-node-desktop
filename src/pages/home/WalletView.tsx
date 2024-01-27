@@ -7,7 +7,7 @@ import {
 	Tooltip,
 	Typography,
 } from "@mui/material";
-import SyncIcon from '@mui/icons-material/Sync';
+import SyncIcon from "@mui/icons-material/Sync";
 import { useEffect, useState } from "react";
 import { useNodeContext } from "../../state/NodeContext";
 import MenuButton from "../../common/MenuButton";
@@ -20,18 +20,12 @@ import Stepper from "../../common/carousle";
 import { writeText } from "@tauri-apps/api/clipboard";
 import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
 import ConnectWithoutContactIcon from "@mui/icons-material/ConnectWithoutContact";
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import DataSaverOnIcon from "@mui/icons-material/DataSaverOn";
 import PublicIcon from "@mui/icons-material/Public";
 import FlagIcon from "@mui/icons-material/Flag";
-import { Snackbar } from "../../common";
-
-export interface Tx {
-	time: number;
-	txid: string;
-	fee?: number;
-	amount: number;
-}
+import { DialogWindow, Snackbar } from "../../common";
+import UpdateConfigDialog from "./UpdateConfigDialog";
 
 export interface WalletData {
 	name: string;
@@ -108,7 +102,6 @@ const SectionTitleInfo = (props: SectionTitleInfoProps) => {
 						<PlayCircleFilledWhiteIcon fontSize="large" />
 					</IconButton>
 				)}
-				<MoreVertIcon />
 			</Typography>
 			<Snackbar
 				message={startError}
@@ -204,6 +197,9 @@ function WalletView(props: WalletData) {
 				console.log(node_id);
 				let on_chain_balance =
 					await get_total_onchain_balance(nodeName);
+				let esploraAddress = await get_esplora_address(
+					nodeName
+				);
 				let peers = await list_peers(nodeName);
 				const new_rows: TablePeerDetails[] = peers.map(
 					(row: PeerDetails) => {
@@ -221,6 +217,7 @@ function WalletView(props: WalletData) {
 				setPeers(new_rows);
 				setTotalOnChainBalance(on_chain_balance);
 				setNodeId(node_id);
+				setEsploraAddress(esploraAddress);
 				setIsNodeRunning(isRunning);
 			} else {
 				setNodeId("");
@@ -237,7 +234,9 @@ function WalletView(props: WalletData) {
 			setPeers([]);
 			setChannels([]);
 			setListeningAddress("");
+			setEsploraAddress("");
 			setTotalOnChainBalance(0);
+			setIsNodeRunning(false);
 			setIsNodeRunning(false);
 		};
 	}, [nodeName, update]);
@@ -344,37 +343,43 @@ function WalletView(props: WalletData) {
 								</Typography>
 							</CardContent>
 						</Card>
-						<Tooltip title="Esplora Address, click to copy">
-							<Card
-								sx={{
-									boxShadow: "none",
-									cursor: "pointer",
-									backgroundColor: "inherit",
-								}}
-								onClick={() =>
-									writeText(esploraAddress)
-								}
-							>
-								<CardContent>
-									<Typography
-										variant="subtitle2"
-										color="gray"
-									>
-										Esplora Address
-									</Typography>
-									<Typography
-										variant="subtitle1"
-										color="primary"
-									>
-										{esploraAddress
-											? `..${esploraAddress.slice(
-													-15
-											  )} `
-											: "-"}
-									</Typography>
-								</CardContent>
-							</Card>
-						</Tooltip>
+						<Card
+							sx={{
+								boxShadow: "none",
+								cursor: "pointer",
+								backgroundColor: "inherit",
+							}}
+						>
+							<CardContent>
+								<DialogWindow
+									TitleButton={(props: any) => (
+										<Typography
+											variant="subtitle2"
+											color="gray"
+											{...props}
+										>
+											Esplora Address
+										</Typography>
+									)}
+									buttonTitle="Esplora Address"
+									onCloseHandler={() => {}}
+									extraProps={{
+										walletName: nodeName,
+									}}
+									DialogView={UpdateConfigDialog}
+								/>
+								<Typography
+									variant="subtitle1"
+									color="primary"
+								>
+									{esploraAddress
+										? `..${esploraAddress.slice(
+												-15
+										  )} `
+										: "-"}
+								</Typography>
+							</CardContent>
+						</Card>
 						<Card
 							sx={{
 								boxShadow: "none",
