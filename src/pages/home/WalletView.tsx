@@ -6,6 +6,7 @@ import {
 	IconButton,
 	Tooltip,
 	Typography,
+	styled,
 } from "@mui/material";
 import SyncIcon from "@mui/icons-material/Sync";
 import { useEffect, useState } from "react";
@@ -24,8 +25,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import DataSaverOnIcon from "@mui/icons-material/DataSaverOn";
 import PublicIcon from "@mui/icons-material/Public";
 import FlagIcon from "@mui/icons-material/Flag";
-import { DialogWindow, Snackbar } from "../../common";
-import UpdateConfigDialog from "./UpdateConfigDialog";
+import { Snackbar } from "../../common";
 
 export interface WalletData {
 	name: string;
@@ -44,6 +44,235 @@ interface SectionTitleInfoProps {
 	isLoading?: boolean;
 	switchUpdate: () => void;
 }
+
+interface DataCardProps {
+	title: string;
+	value: string;
+}
+
+const DataCard = (props: DataCardProps) => {
+	const { title, value } = props;
+	return (
+		<Card
+			onClick={() => writeText(value)}
+			sx={{
+				boxShadow: "none",
+				backgroundColor: "inherit",
+				paddingLeft: "0.5em",
+			}}
+		>
+			<CardContent>
+				<Typography variant="subtitle2" color="gray">
+					{title}
+				</Typography>
+				<Typography variant="subtitle1" color="primary">
+					{value}
+				</Typography>
+			</CardContent>
+		</Card>
+	);
+};
+
+interface ChannelCardProps {
+	channel: ChannelDetails;
+}
+
+const ChannelCard = (props: ChannelCardProps) => {
+	const { channel } = props;
+
+	return (
+		<Card
+			sx={{
+				backgroundColor: "inherit",
+				maxHeight: "10vh",
+				boxShadow: "none",
+				borderRight: "1px dashed #52796f",
+			}}
+		>
+			<CardContent style={{ display: "grid" }}>
+				<Typography
+					variant="subtitle2"
+					color="black"
+					style={{
+						textAlign: "left",
+						cursor: "pointer",
+					}}
+					onClick={() => writeText(channel.channel_id)}
+				>
+					ID
+					{channel.channel_id
+						? ` ${channel.channel_id.slice(
+								0,
+								5
+						  )}..${channel.channel_id.slice(-6)} `
+						: "-"}
+				</Typography>
+				<Typography
+					variant="subtitle2"
+					style={{
+						paddingTop: "0.1em",
+					}}
+					color={"black"}
+				>
+					Balance {channel.balance_msat}
+				</Typography>
+				<div
+					style={{
+						justifySelf: "right",
+						display: "grid",
+						gridTemplateColumns: "1fr 1fr 1fr",
+						gap: "1em",
+					}}
+				>
+					<Tooltip
+						title={
+							channel.is_usable
+								? "Channel is usable"
+								: "Channel not usable"
+						}
+					>
+						<FlagIcon
+							color={
+								channel.is_usable
+									? "success"
+									: "error"
+							}
+						/>
+					</Tooltip>
+					<Tooltip
+						title={
+							channel.is_public
+								? "Channel is public"
+								: "Channel is not public"
+						}
+					>
+						<PublicIcon
+							color={
+								channel.is_public
+									? "success"
+									: "error"
+							}
+						/>
+					</Tooltip>
+					<Tooltip
+						style={{
+							justifySelf: "right",
+						}}
+						title="Actions"
+					>
+						<MoreVertIcon
+							color="disabled"
+							style={{
+								cursor: "pointer",
+							}}
+						/>
+					</Tooltip>
+				</div>
+			</CardContent>
+		</Card>
+	);
+};
+
+interface PeerCardProps {
+	peer: TablePeerDetails;
+}
+
+const PeerCard = (props: PeerCardProps) => {
+	const { peer } = props;
+
+	return (
+		<Card
+			sx={{
+				backgroundColor: "inherit",
+				maxHeight: "10vh",
+				boxShadow: "none",
+				borderRight: "1px dashed #52796f",
+			}}
+		>
+			<CardContent style={{ display: "grid" }}>
+				<Typography
+					variant="subtitle2"
+					color="black"
+					style={{
+						textAlign: "left",
+						cursor: "pointer",
+					}}
+					onClick={() => writeText(peer.node_id)}
+				>
+					Node ID
+					{peer.node_id
+						? ` ${peer.node_id.slice(
+								0,
+								5
+						  )}..${peer.node_id.slice(-6)} `
+						: "-"}
+				</Typography>
+				<Typography
+					variant="subtitle2"
+					style={{
+						paddingTop: "0.1em",
+					}}
+					color={"black"}
+				>
+					Network Address
+					{peer.address}
+				</Typography>
+				<div
+					style={{
+						justifySelf: "right",
+						display: "grid",
+						gridTemplateColumns: "1fr 1fr 1fr",
+						gap: "1em",
+					}}
+				>
+					<Tooltip
+						title={
+							peer.is_connected
+								? "Peer is online"
+								: "Peer is offline"
+						}
+					>
+						<ConnectWithoutContactIcon
+							color={
+								peer.is_connected
+									? "success"
+									: "error"
+							}
+						/>
+					</Tooltip>
+					<Tooltip
+						title={
+							peer.is_persisted
+								? "Peer is persisted"
+								: "Peer is not persisted"
+						}
+					>
+						<DataSaverOnIcon
+							color={
+								peer.is_persisted
+									? "success"
+									: "error"
+							}
+						/>
+					</Tooltip>
+					<Tooltip
+						style={{
+							justifySelf: "right",
+						}}
+						title="Actions"
+					>
+						<MoreVertIcon
+							color="disabled"
+							style={{
+								cursor: "pointer",
+							}}
+						/>
+					</Tooltip>
+				</div>
+			</CardContent>
+		</Card>
+	);
+};
 
 const SectionTitleInfo = (props: SectionTitleInfoProps) => {
 	const { start_node } = useNodeContext();
@@ -131,6 +360,7 @@ const SectionTitle = (props: SectionTitleProps) => {
 				height: "4vh",
 				boxShadow: "none",
 				display: "grid",
+				padding: "1em",
 				gridTemplateColumns: "1fr 1fr",
 			}}
 			onClick={() => {
@@ -176,6 +406,104 @@ function WalletView(props: WalletData) {
 	const [activeChannelsStep, setActiveChannelsStep] = useState(0);
 	const [esploraAddress, setEsploraAddress] = useState("");
 
+	const NodeInfoSection = () => {
+		return (
+			<div
+				style={{
+					display: "grid",
+					gridTemplateColumns: "10fr 1fr",
+				}}
+			>
+				<div
+					style={{
+						display: "grid",
+						gridTemplateColumns: "repeat(9, 1fr)",
+					}}
+				>
+					<DataCard
+						title="Node ID"
+						value={
+							nodeId
+								? ` ${nodeId.slice(
+										0,
+										5
+								  )}..${nodeId.slice(-6)} `
+								: "-"
+						}
+					/>
+					<DataCard
+						title="Network Address"
+						value={
+							listeningAddress
+								? ` ${listeningAddress} `
+								: "-"
+						}
+					/>
+					<DataCard
+						title="Esplora Address"
+						value={
+							esploraAddress
+								? `..${esploraAddress.slice(-15)} `
+								: "-"
+						}
+					/>
+					<DataCard
+						title="On-Chain Balance"
+						value={
+							isNodeRunning
+								? `${totalOnChainBalance} BTC `
+								: "-"
+						}
+					/>
+					<DataCard
+						title="Lightning Balance"
+						value={
+							isNodeRunning
+								? `${totalOnChainBalance} BTC `
+								: "-"
+						}
+					/>
+					<DataCard
+						title="In Liquidity"
+						value={
+							isNodeRunning
+								? `${totalOnChainBalance} BTC `
+								: "-"
+						}
+					/>
+					<DataCard
+						title="Out Liquidity"
+						value={
+							isNodeRunning
+								? `${totalOnChainBalance} BTC `
+								: "-"
+						}
+					/>
+					<DataCard
+						title="Channels"
+						value={
+							isNodeRunning ? `${channels.length}` : "-"
+						}
+					/>
+					<DataCard
+						title="Peers"
+						value={
+							isNodeRunning ? `${peers.length}` : "-"
+						}
+					/>
+				</div>
+				<div style={{ padding: "1em" }}>
+					<SectionTitleInfo
+						switchUpdate={switchUpdate}
+						nodeName={nodeName}
+						isFold={showNodeInfo}
+						isRunning={isNodeRunning}
+					/>
+				</div>
+			</div>
+		);
+	};
+
 	const switchUpdate = () => setUpdate(!update);
 
 	useEffect(() => {
@@ -193,8 +521,6 @@ function WalletView(props: WalletData) {
 			let isRunning = await is_node_running(nodeName);
 			if (isRunning) {
 				let node_id = await get_node_id(nodeName);
-				console.log(nodeName);
-				console.log(node_id);
 				let on_chain_balance =
 					await get_total_onchain_balance(nodeName);
 				let esploraAddress = await get_esplora_address(
@@ -244,618 +570,78 @@ function WalletView(props: WalletData) {
 	if (!nodeName) {
 		return <></>;
 	}
+
 	return (
 		<div>
-			<div
-				style={{
-					color: "primary",
-					paddingTop: "1em",
-					paddingLeft: "1em",
-					paddingBottom: "0em",
-				}}
-			>
-				<SectionTitle title="Node Info" onClick={() => {}} />
-			</div>
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "10fr 1fr",
-				}}
-			>
-				<div
-					style={{
-						display: showNodeInfo ? "block" : "none",
-					}}
-				>
-					<div
-						style={{
-							display: "grid",
-							gridTemplateColumns: "repeat(9, 1fr)",
-						}}
-					>
-						<div>
-							<Tooltip
-								style={{ cursor: "pointer" }}
-								title="Node ID, click to copy"
-							>
-								<Card
-									onClick={() => writeText(nodeId)}
-									sx={{
-										boxShadow: "none",
-										backgroundColor: "inherit",
-										paddingLeft: "0.5em",
-									}}
-								>
-									<CardContent>
-										<Typography
-											variant="subtitle2"
-											color="gray"
-										>
-											Node ID
-										</Typography>
-										<Typography
-											variant="subtitle1"
-											style={{
-												whiteSpace:
-													"pre-wrap",
-												wordWrap:
-													"break-word",
-											}}
-											color="primary"
-										>
-											{nodeId
-												? ` ${nodeId.slice(
-														0,
-														5
-												  )}..${nodeId.slice(
-														-6
-												  )} `
-												: "-"}
-										</Typography>
-									</CardContent>
-								</Card>
-							</Tooltip>
-						</div>
-						<Card
-							sx={{
-								boxShadow: "none",
-								backgroundColor: "inherit",
-							}}
-						>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="gray"
-								>
-									Network Address
-								</Typography>
-								<Typography
-									variant="subtitle1"
-									style={{
-										whiteSpace: "pre-wrap",
-										wordWrap: "break-word",
-									}}
-									color="primary"
-								>
-									{listeningAddress
-										? ` ${listeningAddress} `
-										: "-"}
-								</Typography>
-							</CardContent>
-						</Card>
-						<Card
-							sx={{
-								boxShadow: "none",
-								cursor: "pointer",
-								backgroundColor: "inherit",
-							}}
-						>
-							<CardContent>
-								<DialogWindow
-									TitleButton={(props: any) => (
-										<Typography
-											variant="subtitle2"
-											color="gray"
-											{...props}
-										>
-											Esplora Address
-										</Typography>
-									)}
-									buttonTitle="Esplora Address"
-									onCloseHandler={() => {}}
-									extraProps={{
-										walletName: nodeName,
-									}}
-									DialogView={UpdateConfigDialog}
-								/>
-								<Typography
-									variant="subtitle1"
-									color="primary"
-								>
-									{esploraAddress
-										? `..${esploraAddress.slice(
-												-15
-										  )} `
-										: "-"}
-								</Typography>
-							</CardContent>
-						</Card>
-						<Card
-							sx={{
-								boxShadow: "none",
-								backgroundColor: "inherit",
-							}}
-						>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="gray"
-								>
-									On-Chain Balance
-								</Typography>
-								<Typography
-									variant="subtitle1"
-									style={{
-										whiteSpace: "pre-wrap",
-										wordWrap: "break-word",
-									}}
-									color="primary"
-								>
-									{isNodeRunning
-										? `${totalOnChainBalance} BTC `
-										: "-"}
-								</Typography>
-							</CardContent>
-						</Card>
-						<Card
-							sx={{
-								boxShadow: "none",
-								backgroundColor: "inherit",
-							}}
-						>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="gray"
-								>
-									Lightning Balance
-								</Typography>
-								<Typography
-									variant="subtitle1"
-									style={{
-										whiteSpace: "pre-wrap",
-										wordWrap: "break-word",
-									}}
-									color="primary"
-								>
-									{isNodeRunning
-										? `${totalOnChainBalance} BTC `
-										: "-"}
-								</Typography>
-							</CardContent>
-						</Card>
-						<Card
-							sx={{
-								boxShadow: "none",
-								backgroundColor: "inherit",
-							}}
-						>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="gray"
-								>
-									In Liquidity
-								</Typography>
-								<Typography
-									variant="subtitle1"
-									style={{
-										whiteSpace: "pre-wrap",
-										wordWrap: "break-word",
-									}}
-									color="primary"
-								>
-									{isNodeRunning
-										? `${totalOnChainBalance} BTC `
-										: "-"}
-								</Typography>
-							</CardContent>
-						</Card>
-						<Card
-							sx={{
-								boxShadow: "none",
-								backgroundColor: "inherit",
-							}}
-						>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="gray"
-								>
-									Out Liquidity
-								</Typography>
-								<Typography
-									variant="subtitle1"
-									style={{
-										whiteSpace: "pre-wrap",
-										wordWrap: "break-word",
-									}}
-									color="primary"
-								>
-									{isNodeRunning
-										? `${totalOnChainBalance} BTC `
-										: "-"}
-								</Typography>
-							</CardContent>
-						</Card>
-						<Card
-							sx={{
-								boxShadow: "none",
-								backgroundColor: "inherit",
-							}}
-						>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="gray"
-								>
-									Channels
-								</Typography>
-								<Typography
-									variant="subtitle1"
-									style={{
-										whiteSpace: "pre-wrap",
-										wordWrap: "break-word",
-									}}
-									color="primary"
-								>
-									{isNodeRunning
-										? `${channels.length}`
-										: "-"}
-								</Typography>
-							</CardContent>
-						</Card>
-						<Card
-							sx={{
-								boxShadow: "none",
-								backgroundColor: "inherit",
-							}}
-						>
-							<CardContent>
-								<Typography
-									variant="subtitle2"
-									color="gray"
-								>
-									Peers
-								</Typography>
-								<Typography
-									variant="subtitle1"
-									style={{
-										whiteSpace: "pre-wrap",
-										wordWrap: "break-word",
-									}}
-									color="primary"
-								>
-									{isNodeRunning
-										? `${peers.length}`
-										: "-"}
-								</Typography>
-							</CardContent>
-						</Card>
-					</div>
-				</div>
-				<div style={{ padding: "1em" }}>
-					<SectionTitleInfo
-						switchUpdate={switchUpdate}
-						nodeName={nodeName}
-						isFold={showNodeInfo}
-						isRunning={isNodeRunning}
-					/>
-				</div>
-			</div>
+			<SectionTitle title="Node Info" onClick={() => {}} />
+			<NodeInfoSection />
 			<Divider variant="middle" />
-			<div
-				style={{
-					color: "primary",
-					padding: "1em",
-					paddingBottom: "0em",
-				}}
-			>
-				<SectionTitle
-					title="Peers"
-					disabled={true}
-					onClick={() => setShowPeersInfo(!showPeersInfo)}
-				/>
-			</div>
-			<div
-				style={{
-					display: showPeersInfo ? "grid" : "none",
-				}}
-			>
-				{Math.ceil(peers.length / 4) > 1 && (
-					<Stepper
-						activeStep={activePeersStep}
-						setActiveStep={setActivePeersStep}
-						steps={Math.ceil(peers.length / 4)}
-					/>
-				)}
-				<div
-					style={{
-						display: "grid",
-						gap: "1em",
-						paddingLeft: "1em",
-						paddingBottom: "1em",
-						gridTemplateColumns: "1fr 1fr 1fr 1fr",
-					}}
-				>
-					{peers
-						?.slice(
-							activePeersStep * 4,
-							peers.length < activePeersStep * 4 + 4
-								? peers.length
-								: activePeersStep * 4 + 4
-						)
-						.map((peer) => {
-							return (
-								<Card
-									sx={{
-										backgroundColor: "inherit",
-										maxHeight: "10vh",
-										boxShadow: "none",
-										borderRight:
-											"1px dashed #52796f",
-									}}
-								>
-									<CardContent
-										style={{ display: "grid" }}
-									>
-										<Typography
-											variant="subtitle2"
-											color="black"
-											style={{
-												textAlign: "left",
-												cursor: "pointer",
-											}}
-											onClick={() =>
-												writeText(
-													peer.node_id
-												)
-											}
-										>
-											Node ID
-											{peer.node_id
-												? ` ${peer.node_id.slice(
-														0,
-														5
-												  )}..${peer.node_id.slice(
-														-6
-												  )} `
-												: "-"}
-										</Typography>
-										<Typography
-											variant="subtitle2"
-											style={{
-												paddingTop: "0.1em",
-											}}
-											color={"black"}
-										>
-											Network Address{" "}
-											{peer.address}
-										</Typography>
-										<div
-											style={{
-												justifySelf: "right",
-												display: "grid",
-												gridTemplateColumns:
-													"1fr 1fr 1fr",
-												gap: "1em",
-											}}
-										>
-											<Tooltip
-												title={
-													peer.is_connected
-														? "Peer is online"
-														: "Peer is offline"
-												}
-											>
-												<ConnectWithoutContactIcon
-													color={
-														peer.is_connected
-															? "success"
-															: "error"
-													}
-												/>
-											</Tooltip>
-											<Tooltip
-												title={
-													peer.is_persisted
-														? "Peer is persisted"
-														: "Peer is not persisted"
-												}
-											>
-												<DataSaverOnIcon
-													color={
-														peer.is_persisted
-															? "success"
-															: "error"
-													}
-												/>
-											</Tooltip>
-											<Tooltip
-												style={{
-													justifySelf:
-														"right",
-												}}
-												title="Actions"
-											>
-												<MoreVertIcon
-													color="disabled"
-													style={{
-														cursor: "pointer",
-													}}
-												/>
-											</Tooltip>
-										</div>
-									</CardContent>
-								</Card>
-							);
-						})}
-				</div>
-			</div>
+			<SectionTitle
+				title="Peers"
+				disabled={true}
+				onClick={() => setShowPeersInfo(!showPeersInfo)}
+			/>
+			<Stepper
+				activeStep={activePeersStep}
+				setActiveStep={setActivePeersStep}
+				shownCount={4}
+				dataLength={peers.length}
+			/>
+			<FourHorizontalCards>
+				{peers
+					?.slice(
+						activePeersStep * 4,
+						peers.length < activePeersStep * 4 + 4
+							? peers.length
+							: activePeersStep * 4 + 4
+					)
+					.map((peer) => {
+						return (
+							<PeerCard
+								peer={peer}
+								key={peer.node_id}
+							/>
+						);
+					})}
+			</FourHorizontalCards>
 			<Divider variant="middle" />
-			<div
-				style={{
-					color: "black",
-					padding: "1em",
-					paddingBottom: "0em",
-				}}
-			>
-				<SectionTitle
-					title="Channels"
-					disabled={true}
-					onClick={() =>
-						setShowChannelsInfo(!showChannelsInfo)
-					}
-				/>
-			</div>
-			<div
-				style={{
-					display: showChannelsInfo ? "grid" : "none",
-				}}
-			>
-				{Math.floor(channels.length / 4) > 1 && (
-					<Stepper
-						activeStep={activeChannelsStep}
-						setActiveStep={setActiveChannelsStep}
-						steps={Math.floor(channels.length / 4)}
-					/>
-				)}
-				<div
-					style={{
-						display: "grid",
-						gap: "1em",
-						padding: "1em",
-						paddingTop: "0em",
-						gridTemplateColumns: "1fr 1fr 1fr 1fr",
-					}}
-				>
-					{channels
-						?.slice(
-							activeChannelsStep * 4,
-							channels.length <
-								activeChannelsStep * 4 + 4
-								? channels.length
-								: activeChannelsStep * 4 + 4
-						)
-						.map((channel) => {
-							return (
-								<Card
-									sx={{
-										backgroundColor: "inherit",
-										maxHeight: "10vh",
-										boxShadow: "none",
-										borderRight:
-											"1px dashed #52796f",
-									}}
-								>
-									<CardContent
-										style={{ display: "grid" }}
-									>
-										<Typography
-											variant="subtitle2"
-											color="black"
-											style={{
-												textAlign: "left",
-												cursor: "pointer",
-											}}
-											onClick={() =>
-												writeText(
-													channel.channel_id
-												)
-											}
-										>
-											ID
-											{channel.channel_id
-												? ` ${channel.channel_id.slice(
-														0,
-														5
-												  )}..${channel.channel_id.slice(
-														-6
-												  )} `
-												: "-"}
-										</Typography>
-										<Typography
-											variant="subtitle2"
-											style={{
-												paddingTop: "0.1em",
-											}}
-											color={"black"}
-										>
-											Balance{" "}
-											{channel.balance_msat}
-										</Typography>
-										<div
-											style={{
-												justifySelf: "right",
-												display: "grid",
-												gridTemplateColumns:
-													"1fr 1fr 1fr",
-												gap: "1em",
-											}}
-										>
-											<Tooltip
-												title={
-													channel.is_usable
-														? "Channel is usable"
-														: "Channel not usable"
-												}
-											>
-												<FlagIcon
-													color={
-														channel.is_usable
-															? "success"
-															: "error"
-													}
-												/>
-											</Tooltip>
-											<Tooltip
-												title={
-													channel.is_public
-														? "Channel is public"
-														: "Channel is not public"
-												}
-											>
-												<PublicIcon
-													color={
-														channel.is_public
-															? "success"
-															: "error"
-													}
-												/>
-											</Tooltip>
-											<Tooltip
-												style={{
-													justifySelf:
-														"right",
-												}}
-												title="Actions"
-											>
-												<MoreVertIcon
-													color="disabled"
-													style={{
-														cursor: "pointer",
-													}}
-												/>
-											</Tooltip>
-										</div>
-									</CardContent>
-								</Card>
-							);
-						})}
-				</div>
-			</div>
+			<SectionTitle
+				title="Channels"
+				disabled={true}
+				onClick={() => setShowChannelsInfo(!showChannelsInfo)}
+			/>
+			<Stepper
+				activeStep={activeChannelsStep}
+				setActiveStep={setActiveChannelsStep}
+				shownCount={4}
+				dataLength={channels.length}
+			/>
+			<FourHorizontalCards>
+				{channels
+					?.slice(
+						activeChannelsStep * 4,
+						channels.length < activeChannelsStep * 4 + 4
+							? channels.length
+							: activeChannelsStep * 4 + 4
+					)
+					.map((channel) => {
+						return (
+							<ChannelCard
+								channel={channel}
+								key={channel.channel_id}
+							/>
+						);
+					})}
+			</FourHorizontalCards>
 		</div>
 	);
 }
+
+const FourHorizontalCards = styled("div")({
+	display: "grid",
+	gap: "1em",
+	paddingLeft: "1em",
+	gridTemplateColumns: "1fr 1fr 1fr 1fr",
+});
 
 export default WalletView;
