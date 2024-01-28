@@ -30,7 +30,7 @@ export default function Stepper({
 	return (
 		<MobileStepper
 			variant="dots"
-			steps={steps}
+			steps={steps + 1}
 			position="static"
 			activeStep={activeStep}
 			sx={{ backgroundColor: "inherit" }}
@@ -39,7 +39,7 @@ export default function Stepper({
 					size="large"
 					onClick={handleNext}
 					color="success"
-					disabled={activeStep === steps - 1 || steps === 1}
+					disabled={activeStep === steps || !steps}
 				>
 					Next
 					<KeyboardArrowRight />
@@ -50,7 +50,7 @@ export default function Stepper({
 					size="large"
 					onClick={handleBack}
 					color="success"
-					disabled={steps === 0 || activeStep === 0}
+					disabled={!steps || activeStep === 0}
 				>
 					<KeyboardArrowLeft />
 					Back

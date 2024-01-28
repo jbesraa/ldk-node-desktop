@@ -173,25 +173,17 @@ function BitcoinScreen() {
 		);
 	};
 
-	const WalletsStepper = () => {
-		return (
-			<>
-				{Math.ceil(wallets.length / 4) > 1 && (
-					<Stepper
-						steps={Math.ceil(wallets.length / 4)}
-						activeStep={activeWalletsStep}
-						setActiveStep={setActiveWalletsStep}
-					/>
-				)}
-			</>
-		);
-	};
-
 	return (
 		<>
 			<div style={{ padding: "1em" }}>
 				<PageTitle />
-				<WalletsStepper />
+					<Stepper
+						activeStep={activeWalletsStep}
+						setActiveStep={setActiveWalletsStep}
+						dataLength={wallets.length}
+						shownCount={4}
+
+					/>
 				<WalletsSection />
 			</div>
 			<Divider />
