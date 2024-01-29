@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { DashboardScreen, BitcoinScreen, LDKScreen, HomeScreen } from "../pages";
+import { HomeScreen } from "../pages";
 
 export interface RouterActions {
 	push_route: (s: string) => void;
@@ -37,14 +37,5 @@ export function Router() {
 
 	if (current_route === "home") {
 		return <HomeScreen />;
-	}
-	if (current_route === "dashboard") {
-		return <DashboardScreen />;
-	}
-	if (current_route === "bitcoin") {
-		return <BitcoinScreen />;
-	}
-	if (current_route === "ldk") {
-		return <LDKScreen />;
 	}
 }

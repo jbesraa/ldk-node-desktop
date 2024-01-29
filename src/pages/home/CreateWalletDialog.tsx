@@ -1,20 +1,10 @@
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
 import { useState } from "react";
-import { Button, Chip, TextField } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 import { useBitcoinContext } from "../../state/BitcoinContext";
 import { CreateWalletInput } from "../../types";
-
-const buttonStyle = {
-	color: "#344e41",
-	fontSize: "1em",
-	width: "50%",
-	fontWeight: "600",
-	alignSelf: "center",
-	padding: "1em",
-	margin: "1em",
-	backgroundColor: "#a3b18a",
-};
+import { GlobalButton } from "../../common";
 
 interface SimpleDialogProps {
 	open: boolean;
@@ -142,17 +132,9 @@ function CreateBitcoinWalletDialog(props: SimpleDialogProps) {
 				</div>
 			) : null}
 			{!mnemonic.length ? (
-				<Button
-					sx={buttonStyle}
-					disabled={!walletName.length}
-					onClick={createWallet}
-				>
-					Create Wallet
-				</Button>
+				<GlobalButton disabled={!walletName.length} onClick={createWallet} title="Send" />
 			) : (
-				<Button sx={buttonStyle} onClick={handleClose}>
-					Done
-				</Button>
+				<GlobalButton  onClick={handleClose} title="Done" />
 			)}
 		</Dialog>
 	);

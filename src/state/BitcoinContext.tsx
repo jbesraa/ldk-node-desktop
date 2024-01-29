@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import {
     createContext,
     useContext,
+    useEffect,
     useState,
 } from "react";
 import { CreateWalletInput } from "../types";
@@ -9,7 +10,7 @@ import { CreateWalletInput } from "../types";
 export interface BitcoinActions {
     connection: BitcoinConnection;
     create_wallet: (i: CreateWalletInput) => Promise<string>;
-    list_wallets: () => Promise<string[]>;
+    list_wallets: (refresh?: any) => string[];
     load_wallet: (n: string) => Promise<any>;
     get_new_address: (n: string) => Promise<string>;
 }
@@ -46,7 +47,7 @@ export const BitcoinContextProvider = ({
         }
     }
 
-    async function list_wallets(): Promise<string[]> {
+    async function list_wallets_internal(): Promise<string[]> {
         try {
             const res: string[] = await invoke("list_wallets");
             return res;
@@ -56,10 +57,24 @@ export const BitcoinContextProvider = ({
         }
     }
 
+    const list_wallets = (refresh: any): string[] => {
+        const [wallets, setWallets] = useState<string[]>([]);
+        useEffect(() => {
+            const handler = async () => {
+                let wallets = await list_wallets_internal();
+                setWallets(wallets);
+            };
+            handler();
+
+            return () => setWallets([]);
+        }, [refresh]);
+        return wallets;
+    };
+
     async function load_wallet(name: string): Promise<any> {
         try {
             const res = await invoke("load_wallet", {
-                name
+                name,
             });
             console.log(res);
             return res;
@@ -69,10 +84,12 @@ export const BitcoinContextProvider = ({
         }
     }
 
-    async function get_new_address(walletName: string): Promise<string> {
+    async function get_new_address(
+        walletName: string
+    ): Promise<string> {
         try {
             const res: string = await invoke("get_new_address", {
-                walletName
+                walletName,
             });
             return res;
         } catch (e) {
@@ -86,7 +103,7 @@ export const BitcoinContextProvider = ({
         create_wallet,
         list_wallets,
         load_wallet,
-        get_new_address
+        get_new_address,
     };
 
     return (

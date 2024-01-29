@@ -1,32 +1,24 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import Button from "@mui/material/Button";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { Snackbar } from "../../../../common";
 import { useEffect, useState } from "react";
-import { useNodeContext } from "../../../../state/NodeContext";
-import { ChannelDetails, PeerDetails } from "../../../../types";
-import SelectComponent from "../../../../common/SelectInput";
 import { info } from "tauri-plugin-log-api";
-
-const buttonStyle = {
-	color: "#344e41",
-	fontSize: "1em",
-	width: "100%",
-	fontWeight: "600",
-	backgroundColor: "#a3b18a",
-};
+import { ChannelDetails, PeerDetails } from "../types";
+import { useNodeContext } from "../state/NodeContext";
+import SelectComponent from "../common/SelectInput";
+import { GlobalButton, Snackbar } from "../common";
 
 export interface SimpleDialogProps {
 	open: boolean;
 	selectedValue: string;
 	onClose: (value: string) => void;
+	walletName: string;
 }
 
 function CloseChannelDialog(props: SimpleDialogProps) {
-	const { onClose, selectedValue, open } = props;
+	const { onClose, selectedValue, walletName, open } = props;
 	const [message, setMessage] = useState("");
 	const [selectedPeerNodeId, setSelecterPeerNodeId] = useState("");
 	const [selectedChannel, setSelectedChannel] = useState("");
@@ -39,7 +31,7 @@ function CloseChannelDialog(props: SimpleDialogProps) {
 
 	useEffect(() => {
 		const run = async () => {
-			let res = await list_channels();
+			let res = await list_channels(walletName);
 			setChannelList(res);
 		};
 		run();
@@ -47,7 +39,7 @@ function CloseChannelDialog(props: SimpleDialogProps) {
 
 	useEffect(() => {
 		const run = async () => {
-			let res = await list_peers();
+			let res = await list_peers(walletName);
 			setPeersList(res);
 		};
 		run();
@@ -122,13 +114,7 @@ function CloseChannelDialog(props: SimpleDialogProps) {
 					/>
 				</ListItem>
 				<ListItem disableGutters>
-					<Button
-						style={buttonStyle}
-						variant="contained"
-						onClick={close_channel}
-					>
-						Send
-					</Button>
+				<GlobalButton onClick={close_channel} title="Send" />
 					<Snackbar
 						message={message}
 						open={isSnackbarOpen}

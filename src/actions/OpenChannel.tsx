@@ -1,14 +1,9 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import Button from "@mui/material/Button";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { Snackbar } from "../../../../common";
 import { useEffect, useState } from "react";
-import { useNodeContext } from "../../../../state/NodeContext";
-import { ChannelDetails, PeerDetails } from "../../../../types";
-import SelectComponent from "../../../../common/SelectInput";
 import { info } from "tauri-plugin-log-api";
 import {
 	Checkbox,
@@ -16,14 +11,9 @@ import {
 	ListItemText,
 	TextField,
 } from "@mui/material";
-
-const buttonStyle = {
-	color: "#344e41",
-	fontSize: "1em",
-	width: "100%",
-	fontWeight: "600",
-	backgroundColor: "#a3b18a",
-};
+import { useNodeContext } from "../state/NodeContext";
+import SelectComponent from "../common/SelectInput";
+import { GlobalButton, Snackbar } from "../common";
 
 export interface SimpleDialogProps {
 	open: boolean;
@@ -146,13 +136,7 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 					/>
 				</ListItemIcon>
 				<ListItem disableGutters>
-					<Button
-						style={buttonStyle}
-						variant="contained"
-						onClick={open_channel}
-					>
-						Send
-					</Button>
+				<GlobalButton onClick={open_channel} title="Send" />
 					<Snackbar
 						message={message}
 						open={isSnackbarOpen}

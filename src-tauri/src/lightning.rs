@@ -17,33 +17,24 @@ use crate::paths::UserPaths;
 use crate::wallet::WalletConfig;
 
 #[tauri::command]
-pub fn start_node(nodeName: String) -> bool {
-    let seed = match std::fs::read(UserPaths::new().seed_file(nodeName.clone())) {
+pub fn start_node(node_name: String) -> (bool, String) {
+    let seed = match std::fs::read(UserPaths::new().seed_file(&node_name)) {
         Ok(s) => s,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
-    let config_file = UserPaths::new().config_file(nodeName.clone());
-    let config_file = match std::fs::read(config_file) {
-        Ok(s) => s,
-        Err(e) => {
-            dbg!(&e);
-            return false;
-        }
-    };
-    let config: WalletConfig = match serde_json::from_slice(&config_file) {
+    let config = match WalletConfig::new(&node_name) {
         Ok(c) => c,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
+    dbg!(&config);
     init_lazy(Arc::new(NodeConf {
         network: ldk_node::bitcoin::Network::Testnet,
         seed,
-        storage_dir: UserPaths::new().ldk_data_dir(nodeName.clone()),
+        storage_dir: UserPaths::new().ldk_data_dir(&node_name),
         listening_address: config.get_listening_address(),
         esplora_address: config.get_esplora_address(),
     }))
@@ -58,7 +49,7 @@ pub fn get_node_id(node_name: String) -> String {
             return "".to_string();
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -77,7 +68,7 @@ pub fn stop_node(node_name: String) -> bool {
             return false;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -102,7 +93,7 @@ pub fn is_node_running(node_name: String) -> bool {
             return false;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -122,7 +113,7 @@ pub fn new_onchain_address(node_name: String) -> String {
             return empty_result;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -147,7 +138,7 @@ pub fn close_channel(node_name: String, node_id: String, channel_id: [u8; 32]) -
             return false;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -188,7 +179,7 @@ pub fn open_channel(
             return empty_result;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -328,7 +319,7 @@ pub fn list_payments(node_name: String) -> Vec<WrappedPaymentDetails> {
             return vec![];
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -350,7 +341,7 @@ pub fn list_channels(node_name: String) -> Vec<ChanDetails> {
             return vec![];
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -377,7 +368,7 @@ pub fn create_invoice(
             return None;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -403,7 +394,7 @@ pub fn pay_invoice(node_name: String, invoice: String) -> Option<[u8; 32]> {
             return None;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -442,7 +433,7 @@ pub fn disconnect_peer(node_name: String, node_id: String) -> bool {
             return false;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -475,7 +466,7 @@ pub fn connect_to_node(our_node_name: String, node_id: String, net_address: Stri
             return false;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(our_node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&our_node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -540,7 +531,7 @@ pub fn list_peers(node_name: String) -> Vec<WrappedPeerDetails> {
             return vec![];
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -562,7 +553,7 @@ pub fn spendable_on_chain(node_name: String) -> u64 {
             return 0;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -587,7 +578,7 @@ pub fn total_onchain_balance(node_name: String) -> u64 {
             return 0;
         }
     };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(node_name)) {
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
         Some(n) => n,
         None => {
             dbg!("Unable to get node");
@@ -607,15 +598,7 @@ pub fn total_onchain_balance(node_name: String) -> u64 {
 
 #[tauri::command]
 pub fn get_our_address(node_name: String) -> String {
-    let config_file = UserPaths::new().config_file(node_name);
-    let config_file = match std::fs::read(config_file) {
-        Ok(s) => s,
-        Err(e) => {
-            dbg!(&e);
-            return "".to_string();
-        }
-    };
-    let config: WalletConfig = match serde_json::from_slice(&config_file) {
+    let config: WalletConfig = match WalletConfig::new(&node_name) {
         Ok(c) => c,
         Err(_) => return "".to_string(),
     };
@@ -624,20 +607,10 @@ pub fn get_our_address(node_name: String) -> String {
 
 #[tauri::command]
 pub fn get_esplora_address(node_name: String) -> String {
-    let config_file = UserPaths::new().config_file(node_name);
-    dbg!(&config_file);
-    let config_file = match std::fs::read(config_file) {
-        Ok(s) => s,
-        Err(e) => {
-            dbg!(&e);
-            return "".to_string();
-        }
-    };
-    let config: WalletConfig = match serde_json::from_slice(&config_file) {
+    let config: WalletConfig = match WalletConfig::new(&node_name) {
         Ok(c) => c,
         Err(_) => return "".to_string(),
     };
-    dbg!(&config);
     return config.get_esplora_address();
 }
 
@@ -654,7 +627,7 @@ lazy_static! {
     static ref NODES: RwLock<HashMap<String, Arc<Node<SqliteStore>>>> = RwLock::new(HashMap::new());
 }
 
-pub fn init_lazy(config: Arc<NodeConf>) -> bool {
+pub fn init_lazy(config: Arc<NodeConf>) -> (bool, String) {
     let storage_dir = config.storage_dir.clone();
     let mut builder = Builder::new();
     builder.set_network(Network::Testnet);
@@ -664,15 +637,13 @@ pub fn init_lazy(config: Arc<NodeConf>) -> bool {
     let socket_address = match SocketAddress::from_str(&config.listening_address) {
         Ok(s) => s,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     let builder = match builder.set_listening_addresses(vec![socket_address]) {
         Ok(b) => b,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     builder.set_esplora_server(config.esplora_address.clone());
@@ -682,39 +653,34 @@ pub fn init_lazy(config: Arc<NodeConf>) -> bool {
     let builder = match builder.set_entropy_seed_bytes(config.seed.clone()) {
         Ok(b) => b,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     let node = match builder.build() {
         Ok(n) => n,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     let node = Arc::new(node);
     let mut nodes = match NODES.write() {
         Ok(n) => n,
         Err(e) => {
-            dbg!(&e);
-            return false;
+            return (false, e.to_string());
         }
     };
     nodes.insert(storage_dir.clone(), node.clone());
     match node.clone().start() {
         Ok(_) => {
-            dbg!("Node started");
             thread::spawn(move || loop {
                 let event = node.clone().wait_next_event();
                 println!("EVENT: {:?}", event);
                 node.event_handled();
             });
-            true
+            (true, "".to_string())
         }
         Err(e) => {
-            dbg!(&e);
-            false
+            return (false, e.to_string());
         }
     }
 }

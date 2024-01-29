@@ -1,49 +1,48 @@
-import { useTheme } from "@mui/material/styles";
 import MobileStepper from "@mui/material/MobileStepper";
 import Button from "@mui/material/Button";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 
 export default function Stepper({
-	steps,
 	activeStep,
 	setActiveStep,
+	dataLength,
+	shownCount,
 }: {
-	steps: number;
 	activeStep: number;
 	setActiveStep: any;
+	dataLength: number;
+	shownCount: number;
 }) {
-	const theme = useTheme();
+	const steps = Math.floor(dataLength / shownCount);
 	const handleNext = () => {
-		setActiveStep((prevActiveStep) => prevActiveStep + 1);
+		setActiveStep((prevActiveStep: number) => prevActiveStep + 1);
 	};
 
 	const handleBack = () => {
-		setActiveStep((prevActiveStep) => prevActiveStep - 1);
+		setActiveStep((prevActiveStep: number) => prevActiveStep - 1);
 	};
 
-			console.log(steps);
-			console.log("active", activeStep);
+	if (!steps) {
+		return null;
+	}
+
 	return (
 		<MobileStepper
 			variant="dots"
-			steps={steps}
+			steps={steps + 1}
 			position="static"
 			activeStep={activeStep}
-			sx={{backgroundColor: "inherit"}}
+			sx={{ backgroundColor: "inherit" }}
 			nextButton={
 				<Button
 					size="large"
 					onClick={handleNext}
 					color="success"
-					disabled={activeStep === steps - 1 || steps === 1}
+					disabled={activeStep === steps || !steps}
 				>
 					Next
-					{theme.direction === "rtl" ? (
-						<KeyboardArrowLeft />
-					) : (
-						<KeyboardArrowRight />
-					)}
+					<KeyboardArrowRight />
 				</Button>
 			}
 			backButton={
@@ -51,13 +50,9 @@ export default function Stepper({
 					size="large"
 					onClick={handleBack}
 					color="success"
-					disabled={steps === 0 || activeStep === 0}
+					disabled={!steps || activeStep === 0}
 				>
-					{theme.direction === "rtl" ? (
-						<KeyboardArrowRight />
-					) : (
-						<KeyboardArrowLeft />
-					)}
+					<KeyboardArrowLeft />
 					Back
 				</Button>
 			}

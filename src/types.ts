@@ -79,3 +79,9 @@ export interface StartNodeInput {
 	listeningAddress: string;
 	esploraAddress: string;
 }
+
+export interface UpdateConfigInput {
+	walletName: string;
+	esploraAddress: string;
+	listeningAddress: string;
+}

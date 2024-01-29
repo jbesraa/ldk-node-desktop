@@ -1,20 +1,11 @@
 import * as React from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { Snackbar } from "../../../../common";
-
-const buttonStyle = {
-	color: "#344e41",
-	fontSize: "1em",
-	width: "100%",
-	fontWeight: "600",
-	backgroundColor: "#a3b18a",
-};
+import { GlobalButton, Snackbar } from "../common";
 
 export interface SimpleDialogProps {
 	open: boolean;
@@ -63,12 +54,16 @@ function CreateInvoiceDialog(props: SimpleDialogProps) {
 			onClose={handleClose}
 			open={open}
 		>
-			<DialogTitle sx={{ textAlign: "center" }}>{title}</DialogTitle>
+			<DialogTitle sx={{ textAlign: "center" }}>
+				{title}
+			</DialogTitle>
 			<List sx={{ p: 6 }}>
 				<ListItem disableGutters>
 					<TextField
 						value={amount_msat}
-						onChange={(e) => setAmountMSat(Number(e.target.value))}
+						onChange={(e) =>
+							setAmountMSat(Number(e.target.value))
+						}
 						style={{ width: "100%" }}
 						label="Amount (msat)"
 						variant="outlined"
@@ -77,7 +72,9 @@ function CreateInvoiceDialog(props: SimpleDialogProps) {
 				<ListItem disableGutters>
 					<TextField
 						value={expiry_secs}
-						onChange={(e) => setExpirySecs(Number(e.target.value))}
+						onChange={(e) =>
+							setExpirySecs(Number(e.target.value))
+						}
 						style={{ width: "100%" }}
 						label="Expiry (secs)"
 						variant="outlined"
@@ -86,21 +83,21 @@ function CreateInvoiceDialog(props: SimpleDialogProps) {
 				<ListItem disableGutters>
 					<TextField
 						value={description}
-						onChange={(e) => setDescription(e.target.value)}
+						onChange={(e) =>
+							setDescription(e.target.value)
+						}
 						style={{ width: "100%" }}
 						label="Description"
 						variant="outlined"
 					/>
 				</ListItem>
 				<ListItem disableGutters>
-					<Button
-						style={buttonStyle}
-						variant="contained"
-						onClick={create_invoice}
-					>
-						Create
-					</Button>
-					<Snackbar message={message} open={isSnackbarOpen} setOpen={setIssnackbarOpen} />
+				<GlobalButton onClick={create_invoice} title="Send" />
+					<Snackbar
+						message={message}
+						open={isSnackbarOpen}
+						setOpen={setIssnackbarOpen}
+					/>
 				</ListItem>
 			</List>
 		</Dialog>

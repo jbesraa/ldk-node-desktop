@@ -9,7 +9,7 @@ mod paths;
 mod wallet;
 
 fn main() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::default()
                 .targets([LogTarget::Stdout])
@@ -43,6 +43,13 @@ fn main() {
             // bitcoin::get_new_address,
             // bitcoin::create_transaction,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|_app_handle, e| match e {
+        tauri::RunEvent::ExitRequested { api, .. } => {
+            api.prevent_exit();
+        }
+        _ => {}
+    })
 }

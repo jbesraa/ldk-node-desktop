@@ -1,20 +1,9 @@
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
-import { useEffect, useState } from "react";
-import { Button, Chip, TextField } from "@mui/material";
-import { useBitcoinContext } from "../../state/BitcoinContext";
+import { useState } from "react";
+import { TextField } from "@mui/material";
 import { useNodeContext } from "../../state/NodeContext";
-
-const buttonStyle = {
-	color: "#344e41",
-	fontSize: "1em",
-	width: "50%",
-	fontWeight: "600",
-	alignSelf: "center",
-	padding: "1em",
-	margin: "1em",
-	backgroundColor: "#a3b18a",
-};
+import { GlobalButton } from "../../common";
 
 interface SimpleDialogProps {
 	open: boolean;
@@ -24,11 +13,9 @@ interface SimpleDialogProps {
 }
 
 function ReceiveDialog(props: SimpleDialogProps) {
-	console.log(props);
 	const { new_onchain_address } = useNodeContext();
 	const { onClose, selectedValue, open, walletName } = props;
-	console.log(walletName);
-	const [amount, setAmount] = useState("");
+	const [_, setAmount] = useState("");
 	const [new_address, setNewAddress] = useState("");
 
 	const title = "Receive";
@@ -83,7 +70,10 @@ function ReceiveDialog(props: SimpleDialogProps) {
 				label="On-Chain Address"
 				variant="outlined"
 			/>
-			<Button onClick={new_onchain}>create new address</Button>
+			<GlobalButton
+				onClick={new_onchain}
+				title="Create New Address"
+			/>
 		</Dialog>
 	);
 }
