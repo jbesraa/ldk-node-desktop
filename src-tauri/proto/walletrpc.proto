@@ -1,0 +1,165 @@
+syntax = "proto3";
+package walletrpc;
+
+service WalletRpcService {
+    rpc NewWallet (NewWalletRequest) returns (NewWalletReply);
+    rpc StartNode (GeneralNodeNameRequest) returns (StartNodeReply);
+    rpc IsNodeRunning (GeneralNodeNameRequest) returns (GeneralSuccessReply);
+    rpc GetNodeId (GeneralNodeNameRequest) returns (GetNodeIdReply);
+    rpc GetEsploraAddress (GeneralNodeNameRequest) returns (GetEsploraAddressReply);
+    rpc GetNetAddress (GeneralNodeNameRequest) returns (GetNetAddressReply);
+
+    rpc GetOnChainBalance (GeneralNodeNameRequest) returns
+        (GetOnChainBalanceReply);
+
+    rpc StopNode (GeneralNodeNameRequest) returns (GeneralSuccessReply);
+
+    rpc GetOnChainAddress (GeneralNodeNameRequest) returns
+        (GetOnChainAddressReply);
+
+    rpc CloseChannel (CloseChannelRequest) returns (GeneralSuccessReply);
+    rpc OpenChannel (OpenChannelRequest) returns (GeneralSuccessReply);
+    rpc ListChannels (GeneralNodeNameRequest) returns
+        (ListChannelsReply);
+    rpc ConnectToPeer (ConnectToPeerRequest) returns (GeneralSuccessReply);
+    rpc DisconnectPeer (DisconnectPeerRequest) returns (GeneralSuccessReply);
+    rpc ListPeers (GeneralNodeNameRequest) returns (ListPeersReply);
+    rpc PayInvoice (PayInvoiceRequest) returns (GeneralSuccessReply);
+    rpc CreateInvoice (CreateInvoiceRequest) returns (CreateInvoiceReply);
+}
+
+// Usually for a running node we just need to specify the node name
+// in order to fetch some data
+message GeneralNodeNameRequest {
+    string node_name = 1;
+}
+
+// Usually for a running node we just need to specify the node name
+// in order to fetch some data
+message GeneralSuccessReply {
+    bool success = 1;
+}
+
+// NewWallet
+enum Network {
+  Testnet = 0;
+}
+
+message NewWalletRequest {
+    Network network = 1;
+    string wallet_name = 2;
+    string listening_address = 3;
+    string esplora_address = 4;
+}
+
+message NewWalletReply {
+    string mnemonic = 1;
+}
+
+// StartNode
+message StartNodeReply {
+    bool success = 1;
+    string msg = 2;
+}
+
+// GetNodeId
+message GetNodeIdReply {
+    string node_id = 1;
+}
+
+// GetOnChainBalance
+message GetOnChainBalanceReply {
+    int64 balance = 1;
+}
+// GetOnChainAddress
+message GetOnChainAddressReply {
+    string address = 1;
+}
+
+message Channel {
+    string channel_id = 1;
+    string counterparty_node_id = 2;
+    int64 channel_value_sats = 3;
+    int64 balance_msat = 5;
+    int64 outbound_capacity_msat = 6;
+    int64 inbound_capacity_msat = 7;
+    /* int32 confirmations_required = 8; */
+    /* int32 confirmations = 9; */
+    bool is_outbound = 10;
+    bool is_channel_ready = 11;
+    bool is_usable = 12;
+    bool is_public = 13;
+}
+// ListChannels
+message ListChannelsReply {
+    map<int32, Channel> channels = 1;
+}
+
+message Peer {
+    string node_id = 1;
+    string address = 2;
+    bool is_persisted = 3;
+    bool is_connected = 4; 
+    string alias = 5;
+}
+
+// ListPeers
+message ListPeersReply {
+    map<int32, Peer> peers = 1;
+}
+// OpenChannel
+message OpenChannelRequest {
+    string our_node_name = 1;
+    string node_id = 2;
+    string net_address = 3;
+    int64 channel_amount_sats  = 5;
+    int64 push_to_counterparty_msat = 6;
+    bool announce_channel = 7;
+}
+
+// ConnectToPeer
+message ConnectToPeerRequest {
+    string our_node_name = 1;
+    string node_id = 2;
+    string net_address = 3;
+}
+
+// ConnectToPeer
+message DisconnectPeerRequest {
+    string our_node_name = 1;
+    string node_id = 2;
+}
+
+// PayInvoice
+message PayInvoiceRequest {
+    string our_node_name = 1;
+    string invoice = 2;
+}
+// CreateInvoice
+message CreateInvoiceReply {
+    string invoice = 1;
+}
+
+message CreateInvoiceRequest {
+    string our_node_name= 1;
+    int64 amount_msat = 2;
+    string description = 3;
+    int32 expiry_secs = 4;
+}
+
+// CloseChannel
+message CloseChannelRequest {
+    string our_node_name = 1;
+    string channel_id = 2;
+    string node_id = 3;
+}
+
+// GetEsploraAddress
+message GetEsploraAddressReply {
+    string address = 1;
+}
+
+// GetNetAddress
+message GetNetAddressReply {
+    string address = 1;
+}
