@@ -32,7 +32,7 @@ pub fn start_node(node_name: String) -> (bool, String) {
     };
     dbg!(&config);
     init_lazy(Arc::new(NodeConf {
-        network: ldk_node::bitcoin::Network::Testnet,
+        network: ldk_node::bitcoin::Network::Regtest,
         seed,
         storage_dir: UserPaths::new().ldk_data_dir(&node_name),
         listening_address: config.get_listening_address(),
@@ -630,7 +630,7 @@ lazy_static! {
 pub fn init_lazy(config: Arc<NodeConf>) -> (bool, String) {
     let storage_dir = config.storage_dir.clone();
     let mut builder = Builder::new();
-    builder.set_network(Network::Testnet);
+    builder.set_network(Network::Regtest);
     builder.set_log_level(LogLevel::Info);
     builder.set_storage_dir_path(storage_dir.clone());
     builder.set_log_dir_path(format!("{}/logs", &config.storage_dir));

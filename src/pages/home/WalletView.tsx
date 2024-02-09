@@ -12,11 +12,7 @@ import SyncIcon from "@mui/icons-material/Sync";
 import { useEffect, useState } from "react";
 import { useNodeContext } from "../../state/NodeContext";
 import MenuButton from "../../common/MenuButton";
-import {
-	ChannelDetails,
-	PeerDetails,
-	TablePeerDetails,
-} from "../../types";
+import { ChannelDetails, PeerDetails, TablePeerDetails } from "../../types";
 import Stepper from "../../common/carousle";
 import { writeText } from "@tauri-apps/api/clipboard";
 import PlayCircleFilledWhiteIcon from "@mui/icons-material/PlayCircleFilledWhite";
@@ -132,11 +128,7 @@ const ChannelCard = (props: ChannelCardProps) => {
 						}
 					>
 						<FlagIcon
-							color={
-								channel.is_usable
-									? "success"
-									: "error"
-							}
+							color={channel.is_usable ? "success" : "error"}
 						/>
 					</Tooltip>
 					<Tooltip
@@ -147,11 +139,7 @@ const ChannelCard = (props: ChannelCardProps) => {
 						}
 					>
 						<PublicIcon
-							color={
-								channel.is_public
-									? "success"
-									: "error"
-							}
+							color={channel.is_public ? "success" : "error"}
 						/>
 					</Tooltip>
 					<Tooltip
@@ -201,10 +189,9 @@ const PeerCard = (props: PeerCardProps) => {
 				>
 					Node ID
 					{peer.node_id
-						? ` ${peer.node_id.slice(
-								0,
-								5
-						  )}..${peer.node_id.slice(-6)} `
+						? ` ${peer.node_id.slice(0, 5)}..${peer.node_id.slice(
+								-6
+						  )} `
 						: "-"}
 				</Typography>
 				<Typography
@@ -233,11 +220,7 @@ const PeerCard = (props: PeerCardProps) => {
 						}
 					>
 						<ConnectWithoutContactIcon
-							color={
-								peer.is_connected
-									? "success"
-									: "error"
-							}
+							color={peer.is_connected ? "success" : "error"}
 						/>
 					</Tooltip>
 					<Tooltip
@@ -248,11 +231,7 @@ const PeerCard = (props: PeerCardProps) => {
 						}
 					>
 						<DataSaverOnIcon
-							color={
-								peer.is_persisted
-									? "success"
-									: "error"
-							}
+							color={peer.is_persisted ? "success" : "error"}
 						/>
 					</Tooltip>
 					<Tooltip
@@ -417,27 +396,13 @@ function WalletView(props: WalletData) {
 				<div
 					style={{
 						display: "grid",
-						gridTemplateColumns: "repeat(9, 1fr)",
+						gridTemplateColumns: "repeat(2, 3fr)",
 					}}
 				>
-					<DataCard
-						title="Node ID"
-						value={
-							nodeId
-								? ` ${nodeId.slice(
-										0,
-										5
-								  )}..${nodeId.slice(-6)} `
-								: "-"
-						}
-					/>
+					<DataCard title="Node ID" value={nodeId ? nodeId : "-"} />
 					<DataCard
 						title="Network Address"
-						value={
-							listeningAddress
-								? ` ${listeningAddress} `
-								: "-"
-						}
+						value={listeningAddress ? ` ${listeningAddress} ` : "-"}
 					/>
 					<DataCard
 						title="Esplora Address"
@@ -450,46 +415,34 @@ function WalletView(props: WalletData) {
 					<DataCard
 						title="On-Chain Balance"
 						value={
-							isNodeRunning
-								? `${totalOnChainBalance} BTC `
-								: "-"
+							isNodeRunning ? `${totalOnChainBalance} BTC ` : "-"
 						}
 					/>
 					<DataCard
 						title="Lightning Balance"
 						value={
-							isNodeRunning
-								? `${totalOnChainBalance} BTC `
-								: "-"
+							isNodeRunning ? `${totalOnChainBalance} BTC ` : "-"
 						}
 					/>
 					<DataCard
 						title="In Liquidity"
 						value={
-							isNodeRunning
-								? `${totalOnChainBalance} BTC `
-								: "-"
+							isNodeRunning ? `${totalOnChainBalance} BTC ` : "-"
 						}
 					/>
 					<DataCard
 						title="Out Liquidity"
 						value={
-							isNodeRunning
-								? `${totalOnChainBalance} BTC `
-								: "-"
+							isNodeRunning ? `${totalOnChainBalance} BTC ` : "-"
 						}
 					/>
 					<DataCard
 						title="Channels"
-						value={
-							isNodeRunning ? `${channels.length}` : "-"
-						}
+						value={isNodeRunning ? `${channels.length}` : "-"}
 					/>
 					<DataCard
 						title="Peers"
-						value={
-							isNodeRunning ? `${peers.length}` : "-"
-						}
+						value={isNodeRunning ? `${peers.length}` : "-"}
 					/>
 				</div>
 				<div style={{ padding: "1em" }}>
@@ -523,9 +476,7 @@ function WalletView(props: WalletData) {
 				let node_id = await get_node_id(nodeName);
 				let on_chain_balance =
 					await get_total_onchain_balance(nodeName);
-				let esploraAddress = await get_esplora_address(
-					nodeName
-				);
+				let esploraAddress = await get_esplora_address(nodeName);
 				let peers = await list_peers(nodeName);
 				const new_rows: TablePeerDetails[] = peers.map(
 					(row: PeerDetails) => {
@@ -596,12 +547,7 @@ function WalletView(props: WalletData) {
 							: activePeersStep * 4 + 4
 					)
 					.map((peer) => {
-						return (
-							<PeerCard
-								peer={peer}
-								key={peer.node_id}
-							/>
-						);
+						return <PeerCard peer={peer} key={peer.node_id} />;
 					})}
 			</FourHorizontalCards>
 			<Divider variant="middle" />
