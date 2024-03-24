@@ -90,7 +90,6 @@ function BitcoinScreen() {
 	const TitleCardStyle = {
 		color: "#344e41",
 		backgroundColor: "inherit",
-		borderBottom: "1px dashed #52796f",
 		boxShadow: "none",
 		maxHeight: "8vh",
 	};
@@ -108,9 +107,9 @@ function BitcoinScreen() {
 						<Typography
 							variant="h4"
 							color="#344e41"
-							style={{ alignSelf: "center" }}
+							style={{ justifySelf: "left" }}
 						>
-							Wallets
+							Nodes
 						</Typography>
 						<div
 							style={{
@@ -157,7 +156,6 @@ function BitcoinScreen() {
 							<div
 								key={wallet}
 								style={{
-									border: "1px solid #52796f",
 									borderRadius: "15px",
 								}}
 							>

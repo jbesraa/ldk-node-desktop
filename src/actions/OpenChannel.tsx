@@ -63,12 +63,13 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 				pushToCounterpartyMsat: 0,
 				announceChannel: announce_channel,
 			});
+				console.log(res);
 			if (res) {
 				setMessage("Successfully opened channel");
 			}
-			setMessage("Failed to open channel");
-			setIssnackbarOpen(true);
-			handleClose();
+			// setMessage("Failed to open channel");
+			// setIssnackbarOpen(true);
+			// handleClose();
 		} catch (e) {
 			info(`open_channel: ${String(e)}`)
 			console.log(e);

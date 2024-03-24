@@ -9,6 +9,9 @@ import { OpenChannelDialog, ConnectToPeerDialog } from "../actions";
 import { DialogWindow } from ".";
 import ReceiveDialog from "../pages/home/ReceiveDialog";
 import StopNodeDialog from "../pages/home/StopNodeDialog";
+import OpenLSPChannelDialog from "../actions/OpenLSPChannel";
+import CreateAccountDialog from "../actions/CreateAccount";
+import PayOffer from "../actions/PayOffer";
 
 interface MenuButtonProps {
 	walletName: string;
@@ -110,6 +113,53 @@ export default function MenuButton(props: MenuButtonProps) {
 						/>
 					</span>
 				</MenuItem>
+
+				<MenuItem>
+					<AddLink />
+					<span
+						style={{
+							paddingLeft: "1em",
+						}}
+					>
+						<DialogWindow
+							extraProps={{ walletName }}
+							buttonTitle="Pay Offer"
+							DialogView={PayOffer}
+						/>
+					</span>
+				</MenuItem>
+
+
+				<MenuItem>
+					<AddLink />
+					<span
+						style={{
+							paddingLeft: "1em",
+						}}
+					>
+						<DialogWindow
+							extraProps={{ walletName }}
+							buttonTitle="Create Account"
+							DialogView={CreateAccountDialog}
+						/>
+					</span>
+				</MenuItem>
+
+				<MenuItem>
+					<AddLink />
+					<span
+						style={{
+							paddingLeft: "1em",
+						}}
+					>
+						<DialogWindow
+							extraProps={{ walletName }}
+							buttonTitle="Open Channel With LSP"
+							DialogView={OpenLSPChannelDialog}
+						/>
+					</span>
+				</MenuItem>
+
 				<MenuItem>
 					<AddLink />
 					<span

@@ -29,7 +29,6 @@ function App() {
             <BitcoinContextProvider>
                 <NodeContextProvider>
                 <ThemeProvider theme={theme}>
-                    <AppBar />
                     <Wrapper>
                         <Router />
                     </Wrapper>
@@ -41,8 +40,7 @@ function App() {
 }
 
 const Wrapper = styled.div`
-    margintop: 2em;
-    padding: 1em;
+    padding-top: 2em;
 `;
 
 export default App;
