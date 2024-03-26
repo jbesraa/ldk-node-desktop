@@ -96,41 +96,32 @@ impl Wallet {
         wallet_name: String,
         listening_address: String,
         esplora_address: String,
-    ) -> anyhow::Result<Mnemonic> {
-        let mnemonic = Mnemonic::generate(12).unwrap();
-        let seed = mnemonic.to_seed_normalized("");
-        let project_base_dir = UserPaths::new().project_base_dir();
-        let wallet_dir = UserPaths::new().wallet_dir(&wallet_name);
-        let seed_file = UserPaths::new().seed_file(&wallet_name);
-        std::fs::create_dir_all(&project_base_dir).unwrap();
-        std::fs::create_dir_all(&wallet_dir).unwrap();
-        let mut seed_file = std::fs::File::create(seed_file).unwrap();
-        seed_file.write_all(&seed).unwrap();
-        seed_file.sync_all().unwrap();
-        let config = WalletConfig::new(&wallet_name)?;
-        config.write();
-
-        let ldk_data_dir = format!("{}/ldk-data", wallet_dir);
-        std::fs::create_dir_all(&ldk_data_dir).unwrap();
+        seed: Vec<u8>,
+    ) -> anyhow::Result<bool> {
         let node_conf = Arc::new(NodeConf {
             network,
-            storage_dir: ldk_data_dir,
+            storage_dir: UserPaths::new().ldk_data_dir(&wallet_name),
             listening_address,
-            seed: seed.to_vec(),
+            seed,
             esplora_address,
         });
         if lightning::init_lazy(node_conf.clone()).0 {
             dbg!("Lightning node initialized");
+            Ok(true)
         } else {
             dbg!("Lightning node failed to initialize");
+            Ok(false)
         }
-        Ok(mnemonic)
     }
 
     fn list_wallets() -> Vec<String> {
         let wallets_dir = UserPaths::new().wallets_dir();
         let mut wallets = Vec::new();
-        for entry in std::fs::read_dir(wallets_dir).unwrap() {
+        let entries = match std::fs::read_dir(wallets_dir) {
+            Ok(entries) => entries,
+            Err(_) => return wallets,
+        };
+        for entry in entries {
             let entry = entry.unwrap();
             let path = entry.path();
             if path.is_dir() {
@@ -158,13 +149,19 @@ pub fn create_wallet(
     listening_address: String,
     esplora_address: String,
 ) -> Result<String, ()> {
-    let mnemonic = match Wallet::new(
-        Network::Testnet,
+    let (seed, mnemonic) = create_dirs(
+        wallet_name.clone(),
+        listening_address.clone(),
+        esplora_address.clone(),
+    );
+    let success = match Wallet::new(
+        Network::Regtest,
         wallet_name,
         listening_address,
         esplora_address,
+        seed,
     ) {
-        Ok(mnemonic) => mnemonic,
+        Ok(success) => success,
         Err(_) => return Err(()),
     };
     Ok(mnemonic.to_string())
@@ -182,4 +179,31 @@ pub fn update_config(
 #[tauri::command]
 pub fn list_wallets() -> Vec<String> {
     Wallet::list_wallets()
+}
+
+#[tauri::command]
+pub fn create_dirs(
+    wallet_name: String,
+    listening_address: String,
+    esplora_address: String,
+) -> (Vec<u8>, Mnemonic) {
+    let user_paths = UserPaths::new();
+    let project_base_dir = user_paths.project_base_dir();
+    std::fs::create_dir_all(&project_base_dir).unwrap();
+    let ldk_data_dir = user_paths.ldk_data_dir(&wallet_name);
+    std::fs::create_dir_all(&ldk_data_dir).unwrap();
+    let mnemonic = Mnemonic::generate(12).unwrap();
+    let seed = mnemonic.to_seed_normalized("");
+    dbg!("Seed: {:?}", seed);
+    let seed_file = user_paths.seed_file(&wallet_name);
+    let mut seed_file = std::fs::File::create(seed_file).unwrap();
+    seed_file.write_all(&seed).unwrap();
+    seed_file.sync_all().unwrap();
+    let config = WalletConfig {
+        wallet_name,
+        listening_address,
+        esplora_address,
+    };
+    config.write();
+    (seed.to_vec(), mnemonic)
 }

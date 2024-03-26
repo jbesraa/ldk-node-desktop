@@ -13,10 +13,10 @@ interface SimpleDialogProps {
 }
 
 function ReceiveDialog(props: SimpleDialogProps) {
-	const { new_onchain_address } = useNodeContext();
+	const { new_onchain_address, create_bolt12_offer } = useNodeContext();
 	const { onClose, selectedValue, open, walletName } = props;
-	const [_, setAmount] = useState("");
 	const [new_address, setNewAddress] = useState("");
+	const [offer, setOffer] = useState("");
 
 	const title = "Receive";
 
@@ -35,6 +35,16 @@ function ReceiveDialog(props: SimpleDialogProps) {
 		setNewAddress(res);
 	};
 
+	const new_offer = async () => {
+		if (!walletName) {
+			console.log("wallet name is missing, receive dialog");
+			return;
+		}
+		const res = await create_bolt12_offer(walletName);
+		console.log("here0101", res);
+		setOffer(res);
+	};
+
 	return (
 		<Dialog
 			fullWidth={true}
@@ -46,21 +56,6 @@ function ReceiveDialog(props: SimpleDialogProps) {
 				{title}
 			</DialogTitle>
 			<TextField
-				value={walletName + "INACTIVE"}
-				style={{
-					margin: "1em",
-					width: "50%",
-					alignSelf: "center",
-				}}
-				onChange={(e: any) => {
-					console.log(e.target.value);
-					setAmount(e.target.value);
-				}}
-				disabled={true}
-				label="Amount"
-				variant="outlined"
-			/>
-			<TextField
 				value={new_address}
 				style={{
 					margin: "1em",
@@ -70,9 +65,25 @@ function ReceiveDialog(props: SimpleDialogProps) {
 				label="On-Chain Address"
 				variant="outlined"
 			/>
+			<TextField
+				value={offer}
+				style={{
+					margin: "1em",
+					width: "50%",
+					alignSelf: "center",
+				}}
+				label="Offer"
+				variant="outlined"
+			/>
 			<GlobalButton
 				onClick={new_onchain}
 				title="Create New Address"
+			/>
+			<div>
+			</div>
+			<GlobalButton
+				onClick={new_offer}
+				title="Create New Offer"
 			/>
 		</Dialog>
 	);

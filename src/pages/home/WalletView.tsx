@@ -417,19 +417,12 @@ function WalletView(props: WalletData) {
 				<div
 					style={{
 						display: "grid",
-						gridTemplateColumns: "repeat(9, 1fr)",
+						gridTemplateColumns: "3fr 1fr 1fr 1fr",
 					}}
 				>
 					<DataCard
 						title="Node ID"
-						value={
-							nodeId
-								? ` ${nodeId.slice(
-										0,
-										5
-								  )}..${nodeId.slice(-6)} `
-								: "-"
-						}
+						value={ nodeId ? nodeId : "-" }
 					/>
 					<DataCard
 						title="Network Address"
@@ -443,52 +436,16 @@ function WalletView(props: WalletData) {
 						title="Esplora Address"
 						value={
 							esploraAddress
-								? `..${esploraAddress.slice(-15)} `
+								? `${esploraAddress} `
 								: "-"
 						}
 					/>
 					<DataCard
-						title="On-Chain Balance"
+						title="OnChain Balance"
 						value={
 							isNodeRunning
-								? `${totalOnChainBalance} BTC `
+								? `${totalOnChainBalance} Sats `
 								: "-"
-						}
-					/>
-					<DataCard
-						title="Lightning Balance"
-						value={
-							isNodeRunning
-								? `${totalOnChainBalance} BTC `
-								: "-"
-						}
-					/>
-					<DataCard
-						title="In Liquidity"
-						value={
-							isNodeRunning
-								? `${totalOnChainBalance} BTC `
-								: "-"
-						}
-					/>
-					<DataCard
-						title="Out Liquidity"
-						value={
-							isNodeRunning
-								? `${totalOnChainBalance} BTC `
-								: "-"
-						}
-					/>
-					<DataCard
-						title="Channels"
-						value={
-							isNodeRunning ? `${channels.length}` : "-"
-						}
-					/>
-					<DataCard
-						title="Peers"
-						value={
-							isNodeRunning ? `${peers.length}` : "-"
 						}
 					/>
 				</div>
@@ -562,7 +519,6 @@ function WalletView(props: WalletData) {
 			setListeningAddress("");
 			setEsploraAddress("");
 			setTotalOnChainBalance(0);
-			setIsNodeRunning(false);
 			setIsNodeRunning(false);
 		};
 	}, [nodeName, update]);

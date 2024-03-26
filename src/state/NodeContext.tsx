@@ -27,44 +27,32 @@ export interface NodeActions {
 	get_network: (nodeName: string) => Promise<string>;
 	list_channels: (nodeName: string) => Promise<ChannelDetails[]>;
 	list_payments: (nodeName: string) => Promise<PaymentData[]>;
-	disconnect_peer: (
-		nodeName: string,
-		i: string
-	) => Promise<boolean>;
+	disconnect_peer: (nodeName: string, i: string) => Promise<boolean>;
 	update_bitcoin_unit: (i: BitcoinUnit) => void;
 	convert_to_current_unit: (
 		amount: number,
 		amount_unit: BitcoinUnit
 	) => number;
 	bitcoinUnit: BitcoinUnit;
+	create_bolt12_offer: (nodeName: string) => Promise<string>;
 }
 
 export const useNodeContext = () => useContext(NodeContext);
 
 export const NodeContext = createContext({} as NodeActions);
 
-export const NodeContextProvider = ({
-	children,
-}: {
-	children: any;
-}) => {
-	const [bitcoinUnit, setBitcoinUnit] = useState(
-		BitcoinUnit.Satoshis
-	);
+export const NodeContextProvider = ({ children }: { children: any }) => {
+	const [bitcoinUnit, setBitcoinUnit] = useState(BitcoinUnit.Satoshis);
 
 	function update_bitcoin_unit(unit: BitcoinUnit) {
 		setBitcoinUnit(unit);
 	}
 
-	function convert_satoshis_to_milisatoshis(
-		amount: number
-	): number {
+	function convert_satoshis_to_milisatoshis(amount: number): number {
 		return amount * 1000;
 	}
 
-	function convert_milisatoshis_to_satoshis(
-		amount: number
-	): number {
+	function convert_milisatoshis_to_satoshis(amount: number): number {
 		return amount / 1000;
 	}
 
@@ -129,10 +117,7 @@ export const NodeContextProvider = ({
 
 	async function sync_wallet(): Promise<boolean> {
 		try {
-			const synced_wallet: boolean = await invoke(
-				"sync_wallet",
-				{}
-			);
+			const synced_wallet: boolean = await invoke("sync_wallet", {});
 			return synced_wallet;
 		} catch (e) {
 			console.log("Error syncing wallet", e);
@@ -140,9 +125,7 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function connect_to_peer(
-		i: ConnectToPeerInput
-	): Promise<boolean> {
+	async function connect_to_peer(i: ConnectToPeerInput): Promise<boolean> {
 		try {
 			const { node_id, net_address } = i;
 			const res: boolean = await invoke("connect_to_node", {
@@ -173,9 +156,7 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function start_node(
-		nodeName: string
-	): Promise<[boolean, string]> {
+	async function start_node(nodeName: string): Promise<[boolean, string]> {
 		try {
 			const res: boolean = await invoke("start_node", {
 				nodeName,
@@ -203,9 +184,7 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function list_peers(
-		nodeName: string
-	): Promise<PeerDetails[]> {
+	async function list_peers(nodeName: string): Promise<PeerDetails[]> {
 		try {
 			const res: PeerDetails[] = await invoke("list_peers", {
 				nodeName,
@@ -218,9 +197,7 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function new_onchain_address(
-		nodeName: string
-	): Promise<string> {
+	async function new_onchain_address(nodeName: string): Promise<string> {
 		try {
 			const res: string = await invoke("new_onchain_address", {
 				nodeName,
@@ -232,9 +209,7 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function is_node_running(
-		nodeName: string
-	): Promise<boolean> {
+	async function is_node_running(nodeName: string): Promise<boolean> {
 		try {
 			const res: boolean = await invoke("is_node_running", {
 				nodeName,
@@ -274,10 +249,9 @@ export const NodeContextProvider = ({
 		nodeName: string
 	): Promise<number> {
 		try {
-			const res: number = await invoke(
-				"total_onchain_balance",
-				{ nodeName }
-			);
+			const res: number = await invoke("total_onchain_balance", {
+				nodeName,
+			});
 			return res;
 		} catch (e) {
 			console.log("Error get_total_onchain_balance", e);
@@ -295,9 +269,7 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function get_our_address(
-		nodeName: string
-	): Promise<string> {
+	async function get_our_address(nodeName: string): Promise<string> {
 		try {
 			if (!nodeName) return "";
 			const res: string = await invoke("get_our_address", {
@@ -310,9 +282,7 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function get_esplora_address(
-		nodeName: string
-	): Promise<string> {
+	async function get_esplora_address(nodeName: string): Promise<string> {
 		try {
 			if (!nodeName) return "";
 			const res: string = await invoke("get_esplora_address", {
@@ -325,9 +295,7 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function list_payments(
-		nodeName: string
-	): Promise<PaymentData[]> {
+	async function list_payments(nodeName: string): Promise<PaymentData[]> {
 		try {
 			const res: PaymentData[] = await invoke("list_payments", {
 				nodeName,
@@ -339,14 +307,11 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function list_channels(
-		nodeName: string
-	): Promise<ChannelDetails[]> {
+	async function list_channels(nodeName: string): Promise<ChannelDetails[]> {
 		try {
-			const res: ChannelDetails[] = await invoke(
-				"list_channels",
-				{ nodeName }
-			);
+			const res: ChannelDetails[] = await invoke("list_channels", {
+				nodeName,
+			});
 			return res;
 		} catch (e) {
 			console.log("Error list_channels", e);
@@ -354,9 +319,7 @@ export const NodeContextProvider = ({
 		}
 	}
 
-	async function update_config(
-		i: UpdateConfigInput
-	): Promise<boolean> {
+	async function update_config(i: UpdateConfigInput): Promise<boolean> {
 		try {
 			const res: boolean = await invoke("update_config", {
 				...i,
@@ -365,6 +328,19 @@ export const NodeContextProvider = ({
 		} catch (e) {
 			console.log("Error update_config", e);
 			return false;
+		}
+	}
+
+	async function create_bolt12_offer(nodeName: string): Promise<string> {
+		try {
+			const res: string = await invoke("create_bolt12_offer", {
+				nodeName,
+				note: "frommhere",
+			});
+			return res;
+		} catch (e) {
+			console.log("Error update_config", e);
+			return "";
 		}
 	}
 
@@ -389,11 +365,10 @@ export const NodeContextProvider = ({
 		bitcoinUnit,
 		get_esplora_address,
 		get_logs,
+		create_bolt12_offer,
 	};
 
 	return (
-		<NodeContext.Provider value={state}>
-			{children}
-		</NodeContext.Provider>
+		<NodeContext.Provider value={state}>{children}</NodeContext.Provider>
 	);
 };

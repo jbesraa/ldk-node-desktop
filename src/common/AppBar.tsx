@@ -32,14 +32,6 @@ export default function MenuAppBar() {
                             fontSize="large"
                         />
                     </IconButton>
-                    <Typography
-                        variant="h6"
-                        component="div"
-                        color="#344e41"
-                        sx={{ flexGrow: 1 }}
-                    >
-                        0shi
-                    </Typography>
                 </Toolbar>
             </AppBar>
         </Box>

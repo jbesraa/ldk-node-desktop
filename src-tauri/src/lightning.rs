@@ -1,20 +1,130 @@
 use ldk_node::bitcoin::secp256k1::PublicKey;
-use ldk_node::bitcoin::OutPoint;
-use ldk_node::io::sqlite_store::SqliteStore;
+use ldk_node::bitcoin::{Network, OutPoint};
 use ldk_node::lightning::ln::msgs::SocketAddress;
-use ldk_node::lightning::ln::ChannelId;
+use ldk_node::lightning::offers::offer::Offer;
 use ldk_node::lightning_invoice::{Bolt11Invoice, SignedRawBolt11Invoice};
-use ldk_node::{
-    Builder, ChannelDetails, LogLevel, Network, Node, PaymentDetails, PaymentDirection,
-    PaymentStatus, PeerDetails,
-};
+use ldk_node::payment::PaymentDirection;
+use ldk_node::{Builder, ChannelDetails, LogLevel, Node, PeerDetails, UserChannelId};
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::{Arc, RwLock};
 use std::thread;
 
+use crate::account;
 use crate::paths::UserPaths;
 use crate::wallet::WalletConfig;
+
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
+
+// .get("http://0.0.0.0:8283/payment/bolt12/offer")
+pub async fn get_account_offer(request: HttpRequest) -> impl Responder {
+    let headers = request.headers();
+    let token = headers.get("authorization").unwrap();
+    let (_, node_name) = account::verify_jwt(token.to_str().unwrap());
+    dbg!(&node_name);
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            panic!("")
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            panic!("")
+        }
+    };
+    let t = token.to_str().unwrap();
+    dbg!(&t);
+    let offer = node.bolt12_payment().receive(10 * 10, &t).unwrap();
+    dbg!(&offer);
+
+    HttpResponse::Ok().body(offer.to_string())
+}
+
+pub async fn pay_account_offer(request: HttpRequest, body: web::Bytes) -> impl Responder {
+    let headers = request.headers();
+    let token = headers.get("authorization").unwrap();
+    let offer = String::from_utf8(body.to_vec()).unwrap();
+    let (_, node_name) = account::verify_jwt(token.to_str().unwrap());
+    dbg!(&node_name);
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            panic!("")
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            panic!("")
+        }
+    };
+    let t = token.to_str().unwrap();
+    dbg!(&t);
+    let res = match node.bolt12_payment().send(
+        &Offer::from_str(&offer).unwrap(),
+        Some(token.to_str().unwrap().to_string()),
+    ) {
+        Ok(_) => "true",
+        Err(_) => ""
+    };
+
+    HttpResponse::Ok().body(res)
+}
+
+pub async fn get_account_balance(request: HttpRequest) -> impl Responder {
+    let headers = request.headers();
+    let token = headers.get("authorization").unwrap();
+    let (_, node_name) = account::verify_jwt(token.to_str().unwrap());
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return HttpResponse::Ok().body("".to_string());
+            // return "".to_string();
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return HttpResponse::Ok().body("".to_string());
+            // return "".to_string();
+        }
+    };
+
+    let inbound_payments = node.list_payments_with_filter(|p| {
+        p.direction == PaymentDirection::Inbound
+            && p.user_token == token.to_str().unwrap().to_string()
+    });
+
+    let outbound_payments = node.list_payments_with_filter(|p| {
+        p.direction == PaymentDirection::Outbound
+            && p.user_token == token.to_str().unwrap().to_string()
+    });
+
+    let mut balance = 0;
+
+    for payment in inbound_payments {
+        if let Some(amount) = payment.amount_msat {
+            balance = balance + amount;
+        }
+    }
+
+    for payment in outbound_payments {
+        if let Some(amount) = payment.amount_msat {
+            balance = balance - amount;
+        }
+    }
+    // dbg!(&balance);
+
+    HttpResponse::Ok().body(balance.to_string())
+}
 
 #[tauri::command]
 pub fn start_node(node_name: String) -> (bool, String) {
@@ -100,7 +210,7 @@ pub fn is_node_running(node_name: String) -> bool {
             return false;
         }
     };
-    node.is_running()
+    node.status().is_running
 }
 
 #[tauri::command]
@@ -120,17 +230,17 @@ pub fn new_onchain_address(node_name: String) -> String {
             return empty_result;
         }
     };
-    match node.new_onchain_address() {
+    match node.onchain_payment().new_address() {
         Ok(a) => a.to_string(),
         Err(e) => {
             dbg!(e);
-            "".to_string()
+            return empty_result;
         }
     }
 }
 
 #[tauri::command]
-pub fn close_channel(node_name: String, node_id: String, channel_id: [u8; 32]) -> bool {
+pub fn close_channel(node_name: String, node_id: String, user_channel_id: u128) -> bool {
     let node = match NODES.read() {
         Ok(n) => n,
         Err(e) => {
@@ -152,8 +262,7 @@ pub fn close_channel(node_name: String, node_id: String, channel_id: [u8; 32]) -
             return false;
         }
     };
-    let channel_id = ChannelId(channel_id);
-    match node.close_channel(&channel_id, pub_key) {
+    match node.close_channel(&UserChannelId(user_channel_id), pub_key, false) {
         Ok(_) => return true,
         Err(e) => {
             dbg!(&e);
@@ -254,7 +363,7 @@ impl From<ChannelDetails> for ChanDetails {
             channel_value_sats: channel_details.channel_value_sats,
             unspendable_punishment_reserve: channel_details.unspendable_punishment_reserve,
             feerate_sat_per_1000_weight: channel_details.feerate_sat_per_1000_weight,
-            balance_msat: channel_details.balance_msat,
+            balance_msat: channel_details.channel_value_sats,
             outbound_capacity_msat: channel_details.outbound_capacity_msat,
             inbound_capacity_msat: channel_details.inbound_capacity_msat,
             confirmations_required: channel_details.confirmations_required,
@@ -268,69 +377,24 @@ impl From<ChannelDetails> for ChanDetails {
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
-pub struct WrappedPaymentDetails {
-    /// The payment hash, i.e., the hash of the `preimage`.
-    pub hash: [u8; 32],
-    /// The pre-image used by the payment.
-    pub preimage: Option<[u8; 32]>,
-    /// The secret used by the payment.
-    pub secret: Option<[u8; 32]>,
-    /// The amount transferred.
-    pub amount_msat: Option<u64>,
-    /// The direction of the payment.
-    pub direction: String,
-    /// The status of the payment.
-    pub status: String,
-}
-
-impl From<PaymentDetails> for WrappedPaymentDetails {
-    fn from(payment_details: PaymentDetails) -> Self {
-        return WrappedPaymentDetails {
-            hash: payment_details.hash.0,
-            preimage: match payment_details.preimage {
-                Some(p) => Some(p.0),
-                None => None,
-            },
-            secret: match payment_details.secret {
-                Some(s) => Some(s.0),
-                None => None,
-            },
-            amount_msat: payment_details.amount_msat,
-            direction: match payment_details.direction {
-                PaymentDirection::Inbound => "Inbound".to_string(),
-                PaymentDirection::Outbound => "Outbound".to_string(),
-            },
-            status: match payment_details.status {
-                PaymentStatus::Pending => "Pending".to_string(),
-                PaymentStatus::Succeeded => "Succeeded".to_string(),
-                PaymentStatus::Failed => "Failed".to_string(),
-            },
-        };
-    }
-}
-
-#[tauri::command]
-pub fn list_payments(node_name: String) -> Vec<WrappedPaymentDetails> {
-    let node = match NODES.read() {
-        Ok(n) => n,
-        Err(e) => {
-            dbg!(&e);
-            return vec![];
-        }
-    };
-    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
-        Some(n) => n,
-        None => {
-            dbg!("Unable to get node");
-            return vec![];
-        }
-    };
-    node.list_payments()
-        .into_iter()
-        .map(|c: PaymentDetails| WrappedPaymentDetails::from(c))
-        .collect()
-}
+// #[tauri::command]
+// pub fn list_payments(node_name: String) -> Vec<PaymentDetails> {
+//     let node = match NODES.read() {
+//         Ok(n) => n,
+//         Err(e) => {
+//             dbg!(&e);
+//             return vec![];
+//         }
+//     };
+//     let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
+//         Some(n) => n,
+//         None => {
+//             dbg!("Unable to get node");
+//             return vec![];
+//         }
+//     };
+//     node.list_payments()
+// }
 
 #[tauri::command]
 pub fn list_channels(node_name: String) -> Vec<ChanDetails> {
@@ -375,7 +439,10 @@ pub fn create_invoice(
             return None;
         }
     };
-    match node.receive_payment(amount_msat, description, expiry_secs) {
+    match node
+        .bolt11_payment()
+        .receive(amount_msat, description, expiry_secs)
+    {
         Ok(i) => Some(i.into_signed_raw().to_string()),
         Err(e) => {
             dbg!(&e);
@@ -415,7 +482,7 @@ pub fn pay_invoice(node_name: String, invoice: String) -> Option<[u8; 32]> {
             return None;
         }
     };
-    match node.send_payment(&invoice) {
+    match node.bolt11_payment().send(&invoice) {
         Ok(p) => Some(p.0),
         Err(e) => {
             dbg!(&e);
@@ -545,6 +612,79 @@ pub fn list_peers(node_name: String) -> Vec<WrappedPeerDetails> {
 }
 
 #[tauri::command]
+pub fn pay_bolt12_offer(node_name: String, offer: String, amount_msat: u64) -> bool {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return false;
+        }
+    };
+    match node.bolt12_payment().send(
+        &Offer::from_str(&offer).unwrap(),
+        Some("something".to_string()),
+    ) {
+        Ok(_) => true,
+        Err(e) => {
+            dbg!(&e);
+            return false;
+        }
+    }
+}
+
+#[tauri::command]
+pub fn create_bolt12_offer(node_name: String, note: String) -> String {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            panic!("not able to read nodes list");
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            panic!("not able to get node");
+        }
+    };
+
+    node.bolt12_payment()
+        .receive(10 * 10, &note)
+        .unwrap()
+        .to_string()
+}
+
+#[tauri::command]
+pub fn open_channel_with_lsp(node_name: String, amount_msat: u64) -> String {
+    let node = match NODES.read() {
+        Ok(n) => n,
+        Err(e) => {
+            dbg!(&e);
+            return "".to_string();
+        }
+    };
+    let node = match node.get(&UserPaths::new().ldk_data_dir(&node_name)) {
+        Some(n) => n,
+        None => {
+            dbg!("Unable to get node");
+            return "".to_string();
+        }
+    };
+    node.bolt11_payment()
+        .receive_via_jit_channel(amount_msat, "lspdesc", 120000, None)
+        .unwrap()
+        .to_string()
+}
+
+#[tauri::command]
 pub fn spendable_on_chain(node_name: String) -> u64 {
     let node = match NODES.read() {
         Ok(n) => n,
@@ -560,13 +700,7 @@ pub fn spendable_on_chain(node_name: String) -> u64 {
             return 0;
         }
     };
-    match node.spendable_onchain_balance_sats() {
-        Ok(b) => return b,
-        Err(e) => {
-            dbg!(&e);
-            return 0;
-        }
-    }
+    node.list_balances().spendable_onchain_balance_sats
 }
 
 #[tauri::command]
@@ -585,15 +719,7 @@ pub fn total_onchain_balance(node_name: String) -> u64 {
             return 0;
         }
     };
-    match node.total_onchain_balance_sats() {
-        Ok(b) => {
-            return b;
-        }
-        Err(e) => {
-            dbg!(&e);
-            return 0;
-        }
-    }
+    node.list_balances().total_onchain_balance_sats
 }
 
 #[tauri::command]
@@ -616,7 +742,7 @@ pub fn get_esplora_address(node_name: String) -> String {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct NodeConf {
-    pub network: ldk_node::bitcoin::Network,
+    pub network: Network,
     pub storage_dir: String,
     pub listening_address: String,
     pub seed: Vec<u8>,
@@ -624,16 +750,23 @@ pub struct NodeConf {
 }
 
 lazy_static! {
-    static ref NODES: RwLock<HashMap<String, Arc<Node<SqliteStore>>>> = RwLock::new(HashMap::new());
+    static ref NODES: RwLock<HashMap<String, Arc<Node>>> = RwLock::new(HashMap::new());
 }
 
 pub fn init_lazy(config: Arc<NodeConf>) -> (bool, String) {
     let storage_dir = config.storage_dir.clone();
     let mut builder = Builder::new();
-    builder.set_network(Network::Testnet);
-    builder.set_log_level(LogLevel::Info);
+    builder.set_network(Network::Signet);
+    println!("Default Network: Signet");
+    builder.set_log_level(LogLevel::Debug);
     builder.set_storage_dir_path(storage_dir.clone());
     builder.set_log_dir_path(format!("{}/logs", &config.storage_dir));
+    builder.set_liquidity_source_lsps2(
+        SocketAddress::from_str("44.219.111.31:39735").unwrap(),
+        PublicKey::from_str("0371d6fd7d75de2d0372d03ea00e8bacdacb50c27d0eaea0a76a0622eff1f5ef2b")
+            .unwrap(),
+        Some("T2MF3ZU5".to_string()),
+    );
     let socket_address = match SocketAddress::from_str(&config.listening_address) {
         Ok(s) => s,
         Err(e) => {
@@ -674,6 +807,9 @@ pub fn init_lazy(config: Arc<NodeConf>) -> (bool, String) {
         Ok(_) => {
             thread::spawn(move || loop {
                 let event = node.clone().wait_next_event();
+                // match event {
+
+                // }
                 println!("EVENT: {:?}", event);
                 node.event_handled();
             });
