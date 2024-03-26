@@ -15,7 +15,7 @@ export interface NodeActions {
 	get_logs: () => Promise<string[]>;
 	sync_wallet: () => Promise<boolean>;
 	connect_to_peer: (i: ConnectToPeerInput) => Promise<boolean>;
-	start_node: (i: string) => Promise<[boolean, string]>;
+	start_node: (i: string) => Promise<boolean>;
 	stop_node: (nodeName: string) => Promise<boolean>;
 	list_peers: (nodeName: string) => Promise<PeerDetails[]>;
 	new_onchain_address: (nodeName: string) => Promise<string>;
@@ -156,7 +156,7 @@ export const NodeContextProvider = ({ children }: { children: any }) => {
 		}
 	}
 
-	async function start_node(nodeName: string): Promise<[boolean, string]> {
+	async function start_node(nodeName: string): Promise<boolean> {
 		try {
 			const res: boolean = await invoke("start_node", {
 				nodeName,

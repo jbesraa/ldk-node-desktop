@@ -310,14 +310,10 @@ const SectionTitleInfo = (props: SectionTitleInfoProps) => {
 						color="error"
 						onClick={async (_) => {
 							setIsBackdropOpen(true);
-							const [success, message] =
+							const success =
 								await start_node(nodeName);
 							if (!success) {
-								const m = message.includes(
-									"Failed to update fee rate estimates"
-								)
-									? `${message} Validate your Esplora URL is accessible`
-									: "Failed to start node";
+								const m = "Failed to start node";
 								setStartError(m);
 								setIsOpenSnackbar(true);
 								setIsBackdropOpen(false);

@@ -27,8 +27,8 @@ function OpenChannelDialog(props: SimpleDialogProps) {
 	const [message, setMessage] = useState("");
 	const [selectedPeerNodeId, setSelecterPeerNodeId] = useState("");
 	const [selectedChannel, setSelectedChannel] = useState("");
-	const [peersList, setPeersList] = useState<PeerDetails[]>([]);
-	const [channelList, setChannelList] = useState<ChannelDetails[]>(
+	const [peersList, setPeersList] = useState<any[]>([]);
+	const [channelList, setChannelList] = useState<any[]>(
 		[]
 	);
 	const [channel_amount_sats, setChannelAmountSats] = useState(0);
