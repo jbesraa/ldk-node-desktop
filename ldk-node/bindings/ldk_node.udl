@@ -1,0 +1,427 @@
+namespace ldk_node {
+	Mnemonic generate_entropy_mnemonic();
+	Config default_config();
+};
+
+dictionary Config {
+	string storage_dir_path;
+	string? log_dir_path;
+	Network network;
+	sequence<SocketAddress>? listening_addresses;
+	u32 default_cltv_expiry_delta;
+	u64 onchain_wallet_sync_interval_secs;
+	u64 wallet_sync_interval_secs;
+	u64 fee_rate_cache_update_interval_secs;
+	sequence<PublicKey> trusted_peers_0conf;
+	u64 probing_liquidity_limit_multiplier;
+	LogLevel log_level;
+	AnchorChannelsConfig? anchor_channels_config;
+};
+
+dictionary AnchorChannelsConfig {
+	sequence<PublicKey> trusted_peers_no_reserve;
+	u64 per_channel_reserve_sats;
+};
+
+interface Builder {
+	constructor();
+	[Name=from_config]
+	constructor(Config config);
+	void set_entropy_seed_path(string seed_path);
+	[Throws=BuildError]
+	void set_entropy_seed_bytes(sequence<u8> seed_bytes);
+	void set_entropy_bip39_mnemonic(Mnemonic mnemonic, string? passphrase);
+	void set_esplora_server(string esplora_server_url);
+	void set_gossip_source_p2p();
+	void set_gossip_source_rgs(string rgs_server_url);
+	void set_liquidity_source_lsps2(SocketAddress address, PublicKey node_id, string? token);
+	void set_storage_dir_path(string storage_dir_path);
+	void set_network(Network network);
+	[Throws=BuildError]
+	void set_listening_addresses(sequence<SocketAddress> listening_addresses);
+	[Throws=BuildError]
+	Node build();
+	[Throws=BuildError]
+	Node build_with_fs_store();
+};
+
+interface Node {
+	[Throws=NodeError]
+	void start();
+	[Throws=NodeError]
+	void stop();
+	NodeStatus status();
+	Config config();
+	Event? next_event();
+	Event wait_next_event();
+	[Async]
+	Event next_event_async();
+	void event_handled();
+	PublicKey node_id();
+	sequence<SocketAddress>? listening_addresses();
+	Bolt11Payment bolt11_payment();
+	Bolt12Payment bolt12_payment();
+	SpontaneousPayment spontaneous_payment();
+	OnchainPayment onchain_payment();
+	[Throws=NodeError]
+	void connect(PublicKey node_id, SocketAddress address, boolean persist);
+	[Throws=NodeError]
+	void disconnect(PublicKey node_id);
+	[Throws=NodeError]
+	UserChannelId connect_open_channel(PublicKey node_id, SocketAddress address, u64 channel_amount_sats, u64? push_to_counterparty_msat, ChannelConfig? channel_config, boolean announce_channel);
+	[Throws=NodeError]
+	void close_channel([ByRef]UserChannelId user_channel_id, PublicKey counterparty_node_id, boolean force);
+	[Throws=NodeError]
+	void update_channel_config([ByRef]UserChannelId user_channel_id, PublicKey counterparty_node_id, ChannelConfig channel_config);
+	[Throws=NodeError]
+	void sync_wallets();
+	PaymentDetails? payment([ByRef]PaymentId payment_id);
+	[Throws=NodeError]
+	void remove_payment([ByRef]PaymentId payment_id);
+	BalanceDetails list_balances();
+	sequence<PaymentDetails> list_payments();
+	sequence<PeerDetails> list_peers();
+	sequence<ChannelDetails> list_channels();
+	[Throws=NodeError]
+	string sign_message([ByRef]sequence<u8> msg);
+	boolean verify_signature([ByRef]sequence<u8> msg, [ByRef]string sig, [ByRef]PublicKey pkey);
+};
+
+interface Bolt11Payment {
+	[Throws=NodeError]
+	PaymentId send([ByRef]Bolt11Invoice invoice);
+	[Throws=NodeError]
+	PaymentId send_using_amount([ByRef]Bolt11Invoice invoice, u64 amount_msat);
+	[Throws=NodeError]
+	void send_probes([ByRef]Bolt11Invoice invoice);
+	[Throws=NodeError]
+	void send_probes_using_amount([ByRef]Bolt11Invoice invoice, u64 amount_msat);
+	[Throws=NodeError]
+	Bolt11Invoice receive(u64 amount_msat, [ByRef]string description, u32 expiry_secs);
+	[Throws=NodeError]
+	Bolt11Invoice receive_variable_amount([ByRef]string description, u32 expiry_secs);
+	[Throws=NodeError]
+	Bolt11Invoice receive_via_jit_channel(u64 amount_msat, [ByRef]string description, u32 expiry_secs, u64? max_lsp_fee_limit_msat);
+	[Throws=NodeError]
+	Bolt11Invoice receive_variable_amount_via_jit_channel([ByRef]string description, u32 expiry_secs, u64? max_proportional_lsp_fee_limit_ppm_msat);
+};
+
+interface Bolt12Payment {
+	[Throws=NodeError]
+	PaymentId send([ByRef]Offer offer, string? payer_note);
+	[Throws=NodeError]
+	PaymentId send_using_amount([ByRef]Offer offer, string? payer_note, u64 amount_msat);
+	[Throws=NodeError]
+	Offer receive(u64 amount_msat, [ByRef]string description);
+	[Throws=NodeError]
+	Offer receive_variable_amount([ByRef]string description);
+};
+
+interface SpontaneousPayment {
+	[Throws=NodeError]
+	PaymentId send(u64 amount_msat, PublicKey node_id);
+	[Throws=NodeError]
+	void send_probes(u64 amount_msat, PublicKey node_id);
+};
+
+interface OnchainPayment {
+	[Throws=NodeError]
+	Address new_address();
+	[Throws=NodeError]
+	Txid send_to_address([ByRef]Address address, u64 amount_msat);
+	[Throws=NodeError]
+	Txid send_all_to_address([ByRef]Address address);
+};
+
+[Error]
+enum NodeError {
+	"AlreadyRunning",
+	"NotRunning",
+	"OnchainTxCreationFailed",
+	"ConnectionFailed",
+	"InvoiceCreationFailed",
+	"OfferCreationFailed",
+	"PaymentSendingFailed",
+	"ProbeSendingFailed",
+	"ChannelCreationFailed",
+	"ChannelClosingFailed",
+	"ChannelConfigUpdateFailed",
+	"PersistenceFailed",
+	"FeerateEstimationUpdateFailed",
+	"WalletOperationFailed",
+	"OnchainTxSigningFailed",
+	"MessageSigningFailed",
+	"TxSyncFailed",
+	"GossipUpdateFailed",
+	"LiquidityRequestFailed",
+	"InvalidAddress",
+	"InvalidSocketAddress",
+	"InvalidPublicKey",
+	"InvalidSecretKey",
+	"InvalidPaymentId",
+	"InvalidPaymentHash",
+	"InvalidPaymentPreimage",
+	"InvalidPaymentSecret",
+	"InvalidAmount",
+	"InvalidInvoice",
+	"InvalidOffer",
+	"InvalidChannelId",
+	"InvalidNetwork",
+	"DuplicatePayment",
+	"UnsupportedCurrency",
+	"InsufficientFunds",
+	"LiquiditySourceUnavailable",
+	"LiquidityFeeTooHigh",
+};
+
+dictionary NodeStatus {
+	boolean is_running;
+	boolean is_listening;
+	BestBlock current_best_block;
+	u64? latest_wallet_sync_timestamp;
+	u64? latest_onchain_wallet_sync_timestamp;
+	u64? latest_fee_rate_cache_update_timestamp;
+	u64? latest_rgs_snapshot_timestamp;
+	u64? latest_node_announcement_broadcast_timestamp;
+};
+
+dictionary BestBlock {
+	BlockHash block_hash;
+	u32 height;
+};
+
+[Error]
+enum BuildError {
+	"InvalidSeedBytes",
+	"InvalidSeedFile",
+	"InvalidSystemTime",
+	"InvalidChannelMonitor",
+	"InvalidListeningAddresses",
+	"ReadFailed",
+	"WriteFailed",
+	"StoragePathAccessFailed",
+	"KVStoreSetupFailed",
+	"WalletSetupFailed",
+	"LoggerSetupFailed",
+};
+
+[Enum]
+interface Event {
+	PaymentSuccessful(PaymentId? payment_id, PaymentHash payment_hash, u64? fee_paid_msat);
+	PaymentFailed(PaymentId? payment_id, PaymentHash payment_hash, PaymentFailureReason? reason);
+	PaymentReceived(PaymentId? payment_id, PaymentHash payment_hash, u64 amount_msat);
+	ChannelPending(ChannelId channel_id, UserChannelId user_channel_id, ChannelId former_temporary_channel_id, PublicKey counterparty_node_id, OutPoint funding_txo);
+	ChannelReady(ChannelId channel_id, UserChannelId user_channel_id, PublicKey? counterparty_node_id);
+	ChannelClosed(ChannelId channel_id, UserChannelId user_channel_id, PublicKey? counterparty_node_id, ClosureReason? reason);
+};
+
+enum PaymentFailureReason {
+	"RecipientRejected",
+	"UserAbandoned",
+	"RetriesExhausted",
+	"PaymentExpired",
+	"RouteNotFound",
+	"UnexpectedError",
+};
+
+[Enum]
+interface ClosureReason {
+	CounterpartyForceClosed(UntrustedString peer_msg);
+	HolderForceClosed();
+	LegacyCooperativeClosure();
+	CounterpartyInitiatedCooperativeClosure();
+	LocallyInitiatedCooperativeClosure();
+	CommitmentTxConfirmed();
+	FundingTimedOut();
+	ProcessingError(string err);
+	DisconnectedPeer();
+	OutdatedChannelManager();
+	CounterpartyCoopClosedUnfundedChannel();
+	FundingBatchClosure();
+};
+
+[Enum]
+interface PaymentKind {
+	Onchain();
+	Bolt11(PaymentHash hash, PaymentPreimage? preimage, PaymentSecret? secret);
+	Bolt11Jit(PaymentHash hash, PaymentPreimage? preimage, PaymentSecret? secret, LSPFeeLimits lsp_fee_limits);
+	Bolt12(PaymentHash? hash, PaymentPreimage? preimage, PaymentSecret? secret);
+	Spontaneous(PaymentHash hash, PaymentPreimage? preimage);
+};
+
+enum PaymentDirection {
+	"Inbound",
+	"Outbound",
+};
+
+enum PaymentStatus {
+	"Pending",
+	"Succeeded",
+	"Failed",
+};
+
+dictionary LSPFeeLimits {
+	u64? max_total_opening_fee_msat;
+	u64? max_proportional_opening_fee_ppm_msat;
+};
+
+dictionary PaymentDetails {
+	PaymentId id;
+	PaymentKind kind;
+	u64? amount_msat;
+	PaymentDirection direction;
+	PaymentStatus status;
+};
+
+[NonExhaustive]
+enum Network {
+	"Bitcoin",
+	"Testnet",
+	"Signet",
+	"Regtest",
+};
+
+dictionary OutPoint {
+	Txid txid;
+	u32 vout;
+};
+
+enum ChannelType {
+	"StaticRemoteKey",
+	"Anchors",
+};
+
+dictionary ChannelDetails {
+	ChannelId channel_id;
+	PublicKey counterparty_node_id;
+	OutPoint? funding_txo;
+	ChannelType? channel_type;
+	u64 channel_value_sats;
+	u64? unspendable_punishment_reserve;
+	UserChannelId user_channel_id;
+	u32 feerate_sat_per_1000_weight;
+	u64 outbound_capacity_msat;
+	u64 inbound_capacity_msat;
+	u32? confirmations_required;
+	u32? confirmations;
+	boolean is_outbound;
+	boolean is_channel_ready;
+	boolean is_usable;
+	boolean is_public;
+	u16? cltv_expiry_delta;
+	u64 counterparty_unspendable_punishment_reserve;
+	u64? counterparty_outbound_htlc_minimum_msat;
+	u64? counterparty_outbound_htlc_maximum_msat;
+	u32? counterparty_forwarding_info_fee_base_msat;
+	u32? counterparty_forwarding_info_fee_proportional_millionths;
+	u16? counterparty_forwarding_info_cltv_expiry_delta;
+	u64 next_outbound_htlc_limit_msat;
+	u64 next_outbound_htlc_minimum_msat;
+	u16? force_close_spend_delay;
+	u64 inbound_htlc_minimum_msat;
+	u64? inbound_htlc_maximum_msat;
+	ChannelConfig config;
+};
+
+dictionary PeerDetails {
+	PublicKey node_id;
+	SocketAddress address;
+	boolean is_persisted;
+	boolean is_connected;
+};
+
+[Enum]
+interface LightningBalance {
+	ClaimableOnChannelClose ( ChannelId channel_id, PublicKey counterparty_node_id, u64 amount_satoshis );
+	ClaimableAwaitingConfirmations ( ChannelId channel_id, PublicKey counterparty_node_id, u64 amount_satoshis, u32 confirmation_height );
+	ContentiousClaimable ( ChannelId channel_id, PublicKey counterparty_node_id, u64 amount_satoshis, u32 timeout_height, PaymentHash payment_hash, PaymentPreimage payment_preimage );
+	MaybeTimeoutClaimableHTLC ( ChannelId channel_id, PublicKey counterparty_node_id, u64 amount_satoshis, u32 claimable_height, PaymentHash payment_hash);
+	MaybePreimageClaimableHTLC ( ChannelId channel_id, PublicKey counterparty_node_id, u64 amount_satoshis, u32 expiry_height, PaymentHash payment_hash);
+	CounterpartyRevokedOutputClaimable ( ChannelId channel_id, PublicKey counterparty_node_id, u64 amount_satoshis );
+};
+
+[Enum]
+interface PendingSweepBalance {
+	PendingBroadcast ( ChannelId? channel_id, u64 amount_satoshis );
+	BroadcastAwaitingConfirmation ( ChannelId? channel_id, u32 latest_broadcast_height, Txid latest_spending_txid, u64 amount_satoshis );
+	AwaitingThresholdConfirmations ( ChannelId? channel_id, Txid latest_spending_txid, BlockHash confirmation_hash, u32 confirmation_height, u64 amount_satoshis);
+};
+
+dictionary BalanceDetails {
+	u64 total_onchain_balance_sats;
+	u64 spendable_onchain_balance_sats;
+	u64 total_anchor_channels_reserve_sats;
+	u64 total_lightning_balance_sats;
+	sequence<LightningBalance> lightning_balances;
+	sequence<PendingSweepBalance> pending_balances_from_channel_closures;
+};
+
+interface ChannelConfig {
+	constructor();
+	u32 forwarding_fee_proportional_millionths();
+	void set_forwarding_fee_proportional_millionths(u32 value);
+	u32 forwarding_fee_base_msat();
+	void set_forwarding_fee_base_msat(u32 fee_msat);
+	u16 cltv_expiry_delta();
+	void set_cltv_expiry_delta(u16 value);
+	u64 force_close_avoidance_max_fee_satoshis();
+	void set_force_close_avoidance_max_fee_satoshis(u64 value_sat);
+	boolean accept_underpaying_htlcs();
+	void set_accept_underpaying_htlcs(boolean value);
+	void set_max_dust_htlc_exposure_from_fixed_limit(u64 limit_msat);
+	void set_max_dust_htlc_exposure_from_fee_rate_multiplier(u64 multiplier);
+};
+
+enum LogLevel {
+	"Gossip",
+	"Trace",
+	"Debug",
+	"Info",
+	"Warn",
+	"Error",
+};
+
+[Custom]
+typedef string Txid;
+
+[Custom]
+typedef string BlockHash;
+
+[Custom]
+typedef string SocketAddress;
+
+[Custom]
+typedef string PublicKey;
+
+[Custom]
+typedef string Address;
+
+[Custom]
+typedef string Bolt11Invoice;
+
+[Custom]
+typedef string Offer;
+
+[Custom]
+typedef string PaymentId;
+
+[Custom]
+typedef string PaymentHash;
+
+[Custom]
+typedef string PaymentPreimage;
+
+[Custom]
+typedef string PaymentSecret;
+
+[Custom]
+typedef string ChannelId;
+
+[Custom]
+typedef string UserChannelId;
+
+[Custom]
+typedef string Mnemonic;
+
+[Custom]
+typedef string UntrustedString;
